@@ -83,7 +83,9 @@ namespace MultiLanguageSupporter.Editor
                                existingAsset.atlasTextures.Length > 0 &&
                                existingAsset.atlasTextures[0] != null &&
                                existingAsset.atlasTextures[0].width >= 256 &&
-                               existingAsset.material != null;
+                               AssetDatabase.IsSubAsset(existingAsset.atlasTextures[0]) &&
+                               existingAsset.material != null &&
+                               AssetDatabase.IsSubAsset(existingAsset.material);
 
                 if (isValid)
                 {
