@@ -1,8 +1,8 @@
 {
-    "name": "SmartFontUniversal.Editor",
-    "rootNamespace": "SmartFont.Universal.Editor",
+    "name": "MultiLanguageSupporter.Editor",
+    "rootNamespace": "MultiLanguageSupporter.Editor",
     "references": [
-        "SmartFontUniversal",
+        "MultiLanguageSupporter",
         "Unity.TextMeshPro",
         "Unity.TextMeshPro.Editor"
     ],

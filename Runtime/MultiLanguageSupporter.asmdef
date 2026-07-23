@@ -1,6 +1,6 @@
 {
-    "name": "SmartFontUniversal",
-    "rootNamespace": "SmartFont.Universal",
+    "name": "MultiLanguageSupporter",
+    "rootNamespace": "MultiLanguageSupporter",
     "references": [
         "Unity.TextMeshPro"
     ],

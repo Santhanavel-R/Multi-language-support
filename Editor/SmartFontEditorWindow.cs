@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEditor;
 using TMPro;
 using System.Collections.Generic;
-using SmartFont.Universal;
+using MultiLanguageSupporter;
 
-namespace SmartFont.Universal.Editor
+namespace MultiLanguageSupporter.Editor
 {
     public class SmartFontEditorWindow : EditorWindow
     {

@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using TMPro;
 
-namespace SmartFont.Universal.Tests
+namespace MultiLanguageSupporter.Tests
 {
     [TestFixture]
     public class FontResolverTests

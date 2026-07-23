@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace SmartFont.Universal.Tests
+namespace MultiLanguageSupporter.Tests
 {
     [TestFixture]
     public class ScriptDetectorTests
