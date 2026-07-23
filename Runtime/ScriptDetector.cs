@@ -10,10 +10,7 @@ namespace MultiLanguageSupporter
         Hindi,       // Devanagari script
         Bengali,
         Kannada,
-        Malayalam,
-        Thai,
-        Korean,      // Hangul
-        Chinese      // CJK Unified Ideographs
+        Thai
     }
 
     public static class ScriptDetector
@@ -33,10 +30,7 @@ namespace MultiLanguageSupporter
             counts[ScriptType.Hindi] = 0;
             counts[ScriptType.Bengali] = 0;
             counts[ScriptType.Kannada] = 0;
-            counts[ScriptType.Malayalam] = 0;
             counts[ScriptType.Thai] = 0;
-            counts[ScriptType.Korean] = 0;
-            counts[ScriptType.Chinese] = 0;
             counts[ScriptType.Unknown] = 0;
 
             int validChars = 0;
@@ -114,28 +108,9 @@ namespace MultiLanguageSupporter
             if (code >= 0x0C80 && code <= 0x0CFF)
                 return ScriptType.Kannada;
 
-            // Malayalam: U+0D00 to U+0D7F
-            if (code >= 0x0D00 && code <= 0x0D7F)
-                return ScriptType.Malayalam;
-
             // Thai: U+0E00 to U+0E7F
             if (code >= 0x0E00 && code <= 0x0E7F)
                 return ScriptType.Thai;
-
-            // Korean (Hangul): 
-            // Hangul Syllables: U+AC00 to U+D7AF
-            // Hangul Jamo: U+1100 to U+11FF
-            // Hangul Compatibility Jamo: U+3130 to U+318F
-            if ((code >= 0xAC00 && code <= 0x0D7AF) ||
-                (code >= 0x1100 && code <= 0x11FF) ||
-                (code >= 0x3130 && code <= 0x318F))
-                return ScriptType.Korean;
-
-            // Chinese (CJK Unified Ideographs): U+4E00 to U+9FFF
-            // Extension A: U+3400 to U+4DBF
-            if ((code >= 0x4E00 && code <= 0x9FFF) ||
-                (code >= 0x3400 && code <= 0x4DBF))
-                return ScriptType.Chinese;
 
             // Latin (includes basic ASCII, Latin-1 Supplement, Latin Extended A, B)
             if ((code >= 0x0041 && code <= 0x005A) || // A-Z

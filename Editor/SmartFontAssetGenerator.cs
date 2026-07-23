@@ -45,7 +45,7 @@ namespace MultiLanguageSupporter.Editor
 
             AssetDatabase.Refresh();
 
-            // Source TTF/OTF files
+            // Source TTF/OTF files (Keep only the 6 required languages)
             var fontFiles = new Dictionary<ScriptType, string>
             {
                 { ScriptType.Latin, "NotoSans-Regular.ttf" },
@@ -53,10 +53,7 @@ namespace MultiLanguageSupporter.Editor
                 { ScriptType.Hindi, "Kruti Dev 010.ttf" },
                 { ScriptType.Bengali, "NotoSansBengali-Regular.ttf" },
                 { ScriptType.Kannada, "NotoSansKannada-Regular.ttf" },
-                { ScriptType.Malayalam, "NotoSansMalayalam-Regular.ttf" },
-                { ScriptType.Thai, "NotoSansThai-Regular.ttf" },
-                { ScriptType.Chinese, "ZCOOLXiaoWei-Regular.ttf" },
-                { ScriptType.Korean, "Sunflower-Medium.ttf" }
+                { ScriptType.Thai, "NotoSansThai-Regular.ttf" }
             };
 
             // Map to store generated TMP Font Assets
@@ -84,47 +81,43 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
-                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
-
-                // Extract and prepare original sub-assets
-                Texture2D tex = null;
-                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
-                {
-                    tex = fontAsset.atlasTextures[0];
-                    if (tex != null)
-                    {
-                        tex.Resize(1024, 1024);
-                        tex.Apply(false);
-                        tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
-                    }
-                    fontAsset.atlasTextures[0] = null; // Detach to prevent double-serialization conflict during CreateAsset
-                }
-
-                Material mat = fontAsset.material;
-                if (mat != null)
-                {
-                    mat.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    fontAsset.material = null; // Detach to prevent double-serialization conflict during CreateAsset
-                }
-
-                // Create main asset on disk
+                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(
+                    ttfFont,
+                    90, // samplingPointSize
+                    9,  // atlasPadding
+                    UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
+                    256, // atlasWidth
+                    256, // atlasHeight
+                    AtlasPopulationMode.Dynamic,
+                    true // enableMultiAtlasSupport
+                );
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
-
-                // Add sub-assets to establish parent-child relationship (draws foldout arrow)
-                if (tex != null)
+                
+                // Attach atlas textures as sub-assets so they are saved to disk!
+                if (fontAsset.atlasTextures != null)
                 {
-                    AssetDatabase.AddObjectToAsset(tex, fontAsset);
-                    EditorUtility.SetDirty(tex);
-                    fontAsset.atlasTextures[0] = tex; // Restore reference
+                    for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+                    {
+                        Texture2D tex = fontAsset.atlasTextures[i];
+                        if (tex != null)
+                        {
+                            tex.Resize(256, 256);
+                            tex.Apply(false);
+                            tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
+                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            EditorUtility.SetDirty(tex);
+                        }
+                    }
                 }
 
-                if (mat != null)
+                // Attach default material as sub-asset so it is saved to disk!
+                if (fontAsset.material != null)
                 {
-                    AssetDatabase.AddObjectToAsset(mat, fontAsset);
-                    EditorUtility.SetDirty(mat);
-                    fontAsset.material = mat; // Restore reference
+                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    EditorUtility.SetDirty(fontAsset.material);
                 }
-
+                
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); // Refresh UI foldout arrow
