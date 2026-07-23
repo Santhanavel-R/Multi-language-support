@@ -11,6 +11,14 @@ namespace MultiLanguageSupporter
         }
     }
 
+    public class SmartFontPreprocessor : ITextPreprocessor
+    {
+        public string PreprocessText(string text)
+        {
+            return ScriptShaper.Shape(text);
+        }
+    }
+
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("SmartFont/Smart Font Applier")]
     [ExecuteAlways]
@@ -31,14 +39,26 @@ namespace MultiLanguageSupporter
 
         private TMP_Text textComponent;
         private string lastText;
+        private SmartFontPreprocessor preprocessor;
 
         private void Awake()
         {
             textComponent = GetComponent<TMP_Text>();
+            InitializePreprocessor();
+        }
+
+        private void OnEnable()
+        {
+            InitializePreprocessor();
+            if (resolveOnStart)
+            {
+                Resolve();
+            }
         }
 
         private void Start()
         {
+            InitializePreprocessor();
             if (resolveOnStart)
             {
                 Resolve();
@@ -52,6 +72,8 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
+            InitializePreprocessor();
+
             if (observeTextChanges && textComponent != null)
             {
                 string currentText = textComponent.text;
@@ -60,6 +82,18 @@ namespace MultiLanguageSupporter
                     Resolve();
                     lastText = currentText;
                 }
+            }
+        }
+
+        private void InitializePreprocessor()
+        {
+            if (textComponent != null && (textComponent.textPreprocessor == null || !(textComponent.textPreprocessor is SmartFontPreprocessor)))
+            {
+                if (preprocessor == null)
+                {
+                    preprocessor = new SmartFontPreprocessor();
+                }
+                textComponent.textPreprocessor = preprocessor;
             }
         }
 
@@ -72,13 +106,8 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
-                string originalText = textComponent.text;
-                string shapedText = ScriptShaper.Shape(originalText);
-                if (textComponent.text != shapedText)
-                {
-                    textComponent.text = shapedText;
-                }
-                textComponent.FixFont(databaseOverride, originalText);
+                InitializePreprocessor();
+                textComponent.FixFont(databaseOverride);
                 lastText = textComponent.text;
             }
         }

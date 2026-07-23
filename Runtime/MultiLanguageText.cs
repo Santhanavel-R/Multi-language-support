@@ -18,10 +18,8 @@ namespace MultiLanguageSupporter
         private string textContent = "";
 
         private TMP_Text textComponent;
+        private SmartFontPreprocessor preprocessor;
 
-        /// <summary>
-        /// Gets or sets the text content. Setting this will automatically update the TMP text and resolve the font.
-        /// </summary>
         public string Text
         {
             get => textContent;
@@ -38,21 +36,38 @@ namespace MultiLanguageSupporter
         private void Awake()
         {
             textComponent = GetComponent<TMP_Text>();
+            InitializePreprocessor();
         }
 
         private void OnEnable()
         {
+            InitializePreprocessor();
             ApplyTextAndResolve();
         }
 
         private void OnValidate()
         {
+            InitializePreprocessor();
             ApplyTextAndResolve();
         }
 
-        /// <summary>
-        /// Applies the text to the TMP component and resolves the correct font mapping.
-        /// </summary>
+        private void InitializePreprocessor()
+        {
+            if (textComponent == null)
+            {
+                textComponent = GetComponent<TMP_Text>();
+            }
+
+            if (textComponent != null && (textComponent.textPreprocessor == null || !(textComponent.textPreprocessor is SmartFontPreprocessor)))
+            {
+                if (preprocessor == null)
+                {
+                    preprocessor = new SmartFontPreprocessor();
+                }
+                textComponent.textPreprocessor = preprocessor;
+            }
+        }
+
         public void ApplyTextAndResolve()
         {
             if (textComponent == null)
@@ -60,11 +75,12 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
+            InitializePreprocessor();
+
             if (textComponent != null)
             {
-                string shapedText = ScriptShaper.Shape(textContent);
-                textComponent.text = shapedText;
-                textComponent.FixFont(databaseOverride, textContent);
+                textComponent.text = textContent;
+                textComponent.FixFont(databaseOverride);
             }
         }
     }

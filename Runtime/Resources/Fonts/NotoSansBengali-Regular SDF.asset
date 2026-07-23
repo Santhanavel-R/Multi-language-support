@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!28 &-235856656777253438
+--- !u!28 &-3227170101088846957
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -61,7 +61,7 @@ MonoBehaviour:
   m_Name: NotoSansBengali-Regular SDF
   m_EditorClassIdentifier: 
   hashCode: 0
-  material: {fileID: 2778961283330635357}
+  material: {fileID: 8981014911700693455}
   materialHashCode: -2006316128
   m_Version: 1.1.0
   m_SourceFontFileGUID: 0ee90192f60240a6968f2ab115dcdcbb
@@ -93,7 +93,7 @@ MonoBehaviour:
   m_GlyphTable: []
   m_CharacterTable: []
   m_AtlasTextures:
-  - {fileID: -235856656777253438}
+  - {fileID: -3227170101088846957}
   m_AtlasTextureIndex: 0
   m_IsMultiAtlasTexturesEnabled: 1
   m_ClearDynamicDataOnBuild: 0
@@ -190,7 +190,7 @@ MonoBehaviour:
   boldSpacing: 7
   italicStyle: 35
   tabSize: 10
---- !u!21 &2778961283330635357
+--- !u!21 &8981014911700693455
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -214,7 +214,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: -235856656777253438}
+        m_Texture: {fileID: -3227170101088846957}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
