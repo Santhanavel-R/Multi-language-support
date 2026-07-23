@@ -12,4 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 700a4e87d0334944a87fca77454b9e2e, type: 3}
   m_Name: SmartFontDefaultDatabase
   m_EditorClassIdentifier: 
-  mappings: []
+  mappings:
+  - Script: 1
+    FontAsset: {fileID: 11400000, guid: 4e2eb38bd0e7416689c457aec7651fc8, type: 2}
+  - Script: 2
+    FontAsset: {fileID: 11400000, guid: 20df26d9b05d4a5fabac123874e8b472, type: 2}
+  - Script: 3
+    FontAsset: {fileID: 11400000, guid: 1091217b671549d6b527e1c5707569c7, type: 2}
+  - Script: 4
+    FontAsset: {fileID: 11400000, guid: ab961e38af22bca4db0f64e4165aa027, type: 2}
+  - Script: 5
+    FontAsset: {fileID: 11400000, guid: bb9d68775deb4eaaa28ba53d02e43902, type: 2}
+  - Script: 6
+    FontAsset: {fileID: 11400000, guid: 1a743ae0d77a4fc6a908e82da1979782, type: 2}
+  - Script: 7
+    FontAsset: {fileID: 11400000, guid: e41117d49dc34ccd83c87b82e28a6569, type: 2}
+  - Script: 9
+    FontAsset: {fileID: 11400000, guid: 8bb9953abd9845978fb1d03c4e2fbb86, type: 2}
+  - Script: 8
+    FontAsset: {fileID: 11400000, guid: 9b05437a53124aaf9c20a5354a53b21e, type: 2}
