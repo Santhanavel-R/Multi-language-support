@@ -78,42 +78,38 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 string assetPath = $"{PackagePath}/{RuntimePath}/Resources/Fonts/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
-                TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
-
-                if (fontAsset == null)
+                // Always delete existing asset first to ensure we overwrite and save sub-assets correctly!
+                if (AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath) != null)
                 {
-                    Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
-                    fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
-                    AssetDatabase.CreateAsset(fontAsset, assetPath);
-                    
-                    // Attach atlas textures as sub-assets so they are saved to disk!
-                    if (fontAsset.atlasTextures != null)
+                    AssetDatabase.DeleteAsset(assetPath);
+                }
+
+                Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
+                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
+                AssetDatabase.CreateAsset(fontAsset, assetPath);
+                
+                // Attach atlas textures as sub-assets so they are saved to disk!
+                if (fontAsset.atlasTextures != null)
+                {
+                    for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
                     {
-                        for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+                        Texture2D tex = fontAsset.atlasTextures[i];
+                        if (tex != null)
                         {
-                            Texture2D tex = fontAsset.atlasTextures[i];
-                            if (tex != null)
-                            {
-                                tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                                AssetDatabase.AddObjectToAsset(tex, fontAsset);
-                            }
+                            tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
+                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
                         }
                     }
-
-                    // Attach default material as sub-asset so it is saved to disk!
-                    if (fontAsset.material != null)
-                    {
-                        fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                        AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
-                    }
-                    
-                    AssetDatabase.SaveAssets();
                 }
-                else
+
+                // Attach default material as sub-asset so it is saved to disk!
+                if (fontAsset.material != null)
                 {
-                    Debug.Log($"[SmartFont] Found existing TMP Font Asset for {script} at {assetPath}");
+                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
                 }
-
+                
+                AssetDatabase.SaveAssets();
                 generatedAssets[script] = fontAsset;
             }
 
