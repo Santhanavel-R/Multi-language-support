@@ -5,9 +5,10 @@ namespace MultiLanguageSupporter
     public enum ScriptType
     {
         Unknown,
-        Latin,       // English, Malay, Indonesian
+        Latin,       // English, Malay, Indonesian, Filipino
         Tamil,
         Hindi,       // Devanagari script
+        Bengali,
         Kannada,
         Malayalam,
         Thai,
@@ -30,6 +31,7 @@ namespace MultiLanguageSupporter
             counts[ScriptType.Latin] = 0;
             counts[ScriptType.Tamil] = 0;
             counts[ScriptType.Hindi] = 0;
+            counts[ScriptType.Bengali] = 0;
             counts[ScriptType.Kannada] = 0;
             counts[ScriptType.Malayalam] = 0;
             counts[ScriptType.Thai] = 0;
@@ -103,6 +105,10 @@ namespace MultiLanguageSupporter
             // Hindi (Devanagari): U+0900 to U+097F
             if (code >= 0x0900 && code <= 0x097F)
                 return ScriptType.Hindi;
+
+            // Bengali: U+0980 to U+09FF
+            if (code >= 0x0980 && code <= 0x09FF)
+                return ScriptType.Bengali;
 
             // Kannada: U+0C80 to U+0CFF
             if (code >= 0x0C80 && code <= 0x0CFF)
