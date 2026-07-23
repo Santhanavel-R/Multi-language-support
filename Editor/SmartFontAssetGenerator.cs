@@ -14,8 +14,8 @@ namespace MultiLanguageSupporter.Editor
 
         static SmartFontAssetGenerator()
         {
-            // Delay the call so that the AssetDatabase is fully loaded and ready
-            EditorApplication.delayCall += AutoGenerateIfNeeded;
+            // Disabled automatic generation on assembly reload to prevent startup crash loop
+            // EditorApplication.delayCall += AutoGenerateIfNeeded;
         }
 
         private static void AutoGenerateIfNeeded()
@@ -24,8 +24,7 @@ namespace MultiLanguageSupporter.Editor
             FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
             if (database == null || database.IsEmpty)
             {
-                Debug.Log("[SmartFont] Default database is missing or empty. Starting automatic generation of package assets...");
-                Generate();
+                Debug.Log("[SmartFont] Default database is missing or empty. Please run Window > SmartFont > Generate Package Assets manually.");
             }
         }
         
@@ -103,7 +102,7 @@ namespace MultiLanguageSupporter.Editor
                                 tex.Apply(false);
                             }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            AssetDatabase.AddObjectToAsset(tex, assetPath);
                             EditorUtility.SetDirty(tex);
                         }
                     }
@@ -113,7 +112,7 @@ namespace MultiLanguageSupporter.Editor
                 if (fontAsset.material != null)
                 {
                     fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath);
                     EditorUtility.SetDirty(fontAsset.material);
                 }
                 
