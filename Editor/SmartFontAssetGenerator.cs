@@ -85,49 +85,36 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
-                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(
-                    ttfFont,
-                    90, // samplingPointSize
-                    9,  // atlasPadding
-                    UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
-                    1024, // atlasWidth
-                    1024, // atlasHeight
-                    AtlasPopulationMode.Dynamic,
-                    true // enableMultiAtlasSupport
-                );
-                // Setup clean 1024x1024 texture and material, keeping references separate first
-                Texture2D tex = null;
-                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
-                {
-                    tex = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
-                    tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
-                    tex.Apply(false); // Initialize native buffer to prevent garbage serialization size crash!
-                    fontAsset.atlasTextures[0] = null; // Detach to prevent nested serialization during CreateAsset
-                }
-
-                Material mat = fontAsset.material;
-                if (mat != null)
-                {
-                    mat.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    fontAsset.material = null; // Detach to prevent nested serialization during CreateAsset
-                }
-
-                // Create main asset on disk
+                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
-
-                // Add sub-assets to the main asset container
-                if (tex != null)
+                
+                // Attach atlas textures as sub-assets so they are saved to disk!
+                if (fontAsset.atlasTextures != null)
                 {
-                    AssetDatabase.AddObjectToAsset(tex, fontAsset);
-                    EditorUtility.SetDirty(tex);
-                    fontAsset.atlasTextures[0] = tex; // Restore reference
+                    for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+                    {
+                        Texture2D tex = fontAsset.atlasTextures[i];
+                        if (tex != null)
+                        {
+                            // Fix Unity 0x0 texture serialization crash by resizing
+                            if (tex.width == 0 || tex.height == 0)
+                            {
+                                tex.Resize(256, 256);
+                                tex.Apply(false);
+                            }
+                            tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
+                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            EditorUtility.SetDirty(tex);
+                        }
+                    }
                 }
 
-                if (mat != null)
+                // Attach default material as sub-asset so it is saved to disk!
+                if (fontAsset.material != null)
                 {
-                    AssetDatabase.AddObjectToAsset(mat, fontAsset);
-                    EditorUtility.SetDirty(mat);
-                    fontAsset.material = mat; // Restore reference
+                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    EditorUtility.SetDirty(fontAsset.material);
                 }
                 
                 EditorUtility.SetDirty(fontAsset);
