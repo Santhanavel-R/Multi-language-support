@@ -95,6 +95,12 @@ namespace MultiLanguageSupporter.Editor
                     AtlasPopulationMode.Dynamic,
                     true // enableMultiAtlasSupport
                 );
+                // Replace the 0x0 texture with a clean 1024x1024 texture to prevent serialization crash and corruption
+                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
+                {
+                    fontAsset.atlasTextures[0] = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
+                }
+
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
                 
                 // Attach atlas textures as sub-assets so they are saved to disk!
@@ -105,12 +111,6 @@ namespace MultiLanguageSupporter.Editor
                         Texture2D tex = fontAsset.atlasTextures[i];
                         if (tex != null)
                         {
-                            // Fix Unity 0x0 texture serialization crash by resizing
-                            if (tex.width == 0 || tex.height == 0)
-                            {
-                                tex.Reinitialize(1024, 1024);
-                                tex.Apply(false);
-                            }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
                             AssetDatabase.AddObjectToAsset(tex, fontAsset);
                             EditorUtility.SetDirty(tex);
