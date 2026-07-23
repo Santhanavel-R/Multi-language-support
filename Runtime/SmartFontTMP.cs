@@ -13,6 +13,7 @@ namespace MultiLanguageSupporter
 
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("SmartFont/Smart Font Applier")]
+    [ExecuteAlways]
     [DefaultExecutionOrder(-100)]
     public class SmartFontApplier : MonoBehaviour
     {
