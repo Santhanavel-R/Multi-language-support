@@ -17,6 +17,8 @@ namespace MultiLanguageSupporter
         [SerializeField]
         private FontMapping[] mappings = new FontMapping[0];
 
+        public bool IsEmpty => mappings == null || mappings.Length == 0;
+
         public TMP_FontAsset GetFontForScript(ScriptType script)
         {
             if (mappings == null) return null;

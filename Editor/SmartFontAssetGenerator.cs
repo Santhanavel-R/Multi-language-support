@@ -22,9 +22,9 @@ namespace MultiLanguageSupporter.Editor
         {
             string dbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
             FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
-            if (database == null)
+            if (database == null || database.IsEmpty)
             {
-                Debug.Log("[SmartFont] Default database not found. Starting automatic generation of package assets...");
+                Debug.Log("[SmartFont] Default database is missing or empty. Starting automatic generation of package assets...");
                 Generate();
             }
         }
