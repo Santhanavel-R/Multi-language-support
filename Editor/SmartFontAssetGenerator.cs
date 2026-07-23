@@ -84,7 +84,16 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
-                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
+                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(
+                    ttfFont,
+                    90, // samplingPointSize
+                    9,  // atlasPadding
+                    UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
+                    1024, // atlasWidth
+                    1024, // atlasHeight
+                    AtlasPopulationMode.Dynamic,
+                    true // enableMultiAtlasSupport
+                );
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
                 
                 // Attach atlas textures as sub-assets so they are saved to disk!
@@ -98,7 +107,7 @@ namespace MultiLanguageSupporter.Editor
                             // Fix Unity 0x0 texture serialization crash by resizing
                             if (tex.width == 0 || tex.height == 0)
                             {
-                                tex.Resize(256, 256);
+                                tex.Reinitialize(1024, 1024);
                                 tex.Apply(false);
                             }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
