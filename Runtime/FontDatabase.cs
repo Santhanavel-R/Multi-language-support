@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using TMPro;
 
-namespace SmartFont.Universal
+namespace MultiLanguageSupporter
 {
     [CreateAssetMenu(fileName = "FontDatabase", menuName = "SmartFont/Font Database", order = 1)]
     public class FontDatabase : ScriptableObject

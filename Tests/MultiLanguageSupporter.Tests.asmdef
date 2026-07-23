@@ -1,10 +1,10 @@
 {
-    "name": "SmartFontUniversal.Tests",
-    "rootNamespace": "SmartFont.Universal.Tests",
+    "name": "MultiLanguageSupporter.Tests",
+    "rootNamespace": "MultiLanguageSupporter.Tests",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "SmartFontUniversal",
+        "MultiLanguageSupporter",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],

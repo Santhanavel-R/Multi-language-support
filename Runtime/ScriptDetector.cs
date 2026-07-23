@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SmartFont.Universal
+namespace MultiLanguageSupporter
 {
     public enum ScriptType
     {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-namespace SmartFont.Universal
+namespace MultiLanguageSupporter
 {
     public static class SmartFontExtensions
     {
