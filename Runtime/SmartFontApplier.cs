@@ -17,9 +17,7 @@ namespace MultiLanguageSupporter
     [DefaultExecutionOrder(-100)]
     public class SmartFontApplier : MonoBehaviour, ITextPreprocessor
     {
-        [Tooltip("Optional database override. If null, the default database will be resolved.")]
-        [SerializeField]
-        private FontDatabase databaseOverride;
+        private FontDatabase databaseOverride = null;
 
         [Tooltip("Should the font be resolved automatically on Start?")]
         [SerializeField]

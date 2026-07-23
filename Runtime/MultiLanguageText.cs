@@ -8,9 +8,7 @@ namespace MultiLanguageSupporter
     [ExecuteAlways]
     public class MultiLanguageText : MonoBehaviour, ITextPreprocessor
     {
-        [Tooltip("Optional database override. If null, the default database in Resources will be used.")]
-        [SerializeField]
-        private FontDatabase databaseOverride;
+        private FontDatabase databaseOverride = null;
 
         [Tooltip("The text content to display. This will automatically update the TextMesh Pro component with the correct font.")]
         [SerializeField]
