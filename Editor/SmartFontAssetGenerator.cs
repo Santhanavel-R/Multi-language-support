@@ -77,8 +77,22 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 string assetPath = $"{PackagePath}/{RuntimePath}/Resources/Fonts/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
-                // Always delete existing asset first to ensure we overwrite and save sub-assets correctly!
-                if (AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath) != null)
+                TMP_FontAsset existingAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+                bool isValid = existingAsset != null &&
+                               existingAsset.atlasTextures != null &&
+                               existingAsset.atlasTextures.Length > 0 &&
+                               existingAsset.atlasTextures[0] != null &&
+                               existingAsset.atlasTextures[0].width >= 256 &&
+                               existingAsset.material != null;
+
+                if (isValid)
+                {
+                    Debug.Log($"[SmartFont] Healthy dynamic font asset already exists for {script} at {assetPath}, skipping generation.");
+                    generatedAssets[script] = existingAsset;
+                    continue;
+                }
+
+                if (existingAsset != null)
                 {
                     AssetDatabase.DeleteAsset(assetPath);
                 }
