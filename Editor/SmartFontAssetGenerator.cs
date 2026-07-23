@@ -118,7 +118,7 @@ namespace MultiLanguageSupporter.Editor
                                 tex.Apply(false);
                             }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            AssetDatabase.AddObjectToAsset(tex, assetPath);
                             EditorUtility.SetDirty(tex);
                         }
                     }
@@ -128,7 +128,7 @@ namespace MultiLanguageSupporter.Editor
                 if (fontAsset.material != null)
                 {
                     fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath);
                     EditorUtility.SetDirty(fontAsset.material);
                 }
                 
