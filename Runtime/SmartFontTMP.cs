@@ -47,6 +47,11 @@ namespace MultiLanguageSupporter
 
         private void Update()
         {
+            if (textComponent == null)
+            {
+                textComponent = GetComponent<TMP_Text>();
+            }
+
             if (observeTextChanges && textComponent != null)
             {
                 string currentText = textComponent.text;
@@ -60,6 +65,11 @@ namespace MultiLanguageSupporter
 
         public void Resolve()
         {
+            if (textComponent == null)
+            {
+                textComponent = GetComponent<TMP_Text>();
+            }
+
             if (textComponent != null)
             {
                 string originalText = textComponent.text;
