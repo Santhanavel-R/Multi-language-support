@@ -60,9 +60,9 @@ namespace MultiLanguageSupporter
             if (primaryFont == null) return;
 
             // Ensure fallback list is initialized
-            if (primaryFont.fallbackFontAssetList == null)
+            if (primaryFont.fallbackFontAssetTable == null)
             {
-                primaryFont.fallbackFontAssetList = new List<TMP_FontAsset>();
+                primaryFont.fallbackFontAssetTable = new List<TMP_FontAsset>();
             }
 
             // Go through all other supported scripts and add them to the fallback list if not present
@@ -73,9 +73,9 @@ namespace MultiLanguageSupporter
                 TMP_FontAsset fallbackFont = database.GetFontForScript(script);
                 if (fallbackFont != null && fallbackFont != primaryFont)
                 {
-                    if (!primaryFont.fallbackFontAssetList.Contains(fallbackFont))
+                    if (!primaryFont.fallbackFontAssetTable.Contains(fallbackFont))
                     {
-                        primaryFont.fallbackFontAssetList.Add(fallbackFont);
+                        primaryFont.fallbackFontAssetTable.Add(fallbackFont);
                     }
                 }
             }
