@@ -45,7 +45,7 @@ namespace MultiLanguageSupporter.Editor
 
             AssetDatabase.Refresh();
 
-            // Source TTF/OTF files (Keep only the 6 required languages)
+            // Source TTF/OTF files
             var fontFiles = new Dictionary<ScriptType, string>
             {
                 { ScriptType.Latin, "NotoSans-Regular.ttf" },
@@ -53,7 +53,10 @@ namespace MultiLanguageSupporter.Editor
                 { ScriptType.Hindi, "Kruti Dev 010.ttf" },
                 { ScriptType.Bengali, "NotoSansBengali-Regular.ttf" },
                 { ScriptType.Kannada, "NotoSansKannada-Regular.ttf" },
-                { ScriptType.Thai, "NotoSansThai-Regular.ttf" }
+                { ScriptType.Malayalam, "NotoSansMalayalam-Regular.ttf" },
+                { ScriptType.Thai, "NotoSansThai-Regular.ttf" },
+                { ScriptType.Chinese, "ZCOOLXiaoWei-Regular.ttf" },
+                { ScriptType.Korean, "Sunflower-Medium.ttf" }
             };
 
             // Map to store generated TMP Font Assets

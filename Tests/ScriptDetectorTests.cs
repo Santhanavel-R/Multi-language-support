@@ -31,9 +31,27 @@ namespace MultiLanguageSupporter.Tests
         }
 
         [Test]
+        public void DetectDominantScript_Malayalam_ReturnsMalayalam()
+        {
+            Assert.AreEqual(ScriptType.Malayalam, ScriptDetector.DetectDominantScript("ഹലോ"));
+        }
+
+        [Test]
         public void DetectDominantScript_Thai_ReturnsThai()
         {
             Assert.AreEqual(ScriptType.Thai, ScriptDetector.DetectDominantScript("สวัสดี"));
+        }
+
+        [Test]
+        public void DetectDominantScript_Korean_ReturnsKorean()
+        {
+            Assert.AreEqual(ScriptType.Korean, ScriptDetector.DetectDominantScript("안녕하세요"));
+        }
+
+        [Test]
+        public void DetectDominantScript_Chinese_ReturnsChinese()
+        {
+            Assert.AreEqual(ScriptType.Chinese, ScriptDetector.DetectDominantScript("你好"));
         }
 
         [Test]
