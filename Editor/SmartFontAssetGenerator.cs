@@ -34,13 +34,14 @@ namespace MultiLanguageSupporter.Editor
         {
             Debug.Log("[SmartFont] Starting package asset generation...");
 
-            // Create directories if they don't exist
-            string fontsResourcesDir = Path.Combine(Application.dataPath, "..", PackagePath, RuntimePath, "Resources", "Fonts");
-            string resourcesDir = Path.Combine(Application.dataPath, "..", PackagePath, RuntimePath, "Resources");
-            
-            if (!Directory.Exists(fontsResourcesDir))
+            // Create directories using AssetDatabase
+            if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources"))
             {
-                Directory.CreateDirectory(fontsResourcesDir);
+                AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}", "Resources");
+            }
+            if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources/Fonts"))
+            {
+                AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}/Resources", "Fonts");
             }
 
             AssetDatabase.Refresh();
