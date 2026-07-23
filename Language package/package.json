@@ -1,0 +1,20 @@
+{
+  "name": "com.smartfont.universal",
+  "version": "1.0.0",
+  "displayName": "SmartFont Universal",
+  "description": "Automatically resolves TextMesh Pro rendering issues for multilingual text by detecting Unicode scripts and applying correct font mappings.",
+  "unity": "2020.3",
+  "dependencies": {
+    "com.unity.textmeshpro": "3.0.6"
+  },
+  "keywords": [
+    "font",
+    "textmeshpro",
+    "tmp",
+    "localization",
+    "multilingual"
+  ],
+  "author": {
+    "name": "SmartFont Team"
+  }
+}
