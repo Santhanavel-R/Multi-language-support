@@ -101,6 +101,7 @@ namespace MultiLanguageSupporter.Editor
                 {
                     tex = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
                     tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
+                    tex.Apply(false); // Initialize native buffer to prevent garbage serialization size crash!
                     fontAsset.atlasTextures[0] = null; // Detach to prevent nested serialization during CreateAsset
                 }
 
