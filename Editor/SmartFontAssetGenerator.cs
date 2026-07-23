@@ -98,6 +98,13 @@ namespace MultiLanguageSupporter.Editor
                             }
                         }
                     }
+
+                    // Attach default material as sub-asset so it is saved to disk!
+                    if (fontAsset.material != null)
+                    {
+                        fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                        AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    }
                     
                     AssetDatabase.SaveAssets();
                 }
