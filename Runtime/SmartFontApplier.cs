@@ -107,7 +107,9 @@ namespace MultiLanguageSupporter
 
         public string PreprocessText(string text)
         {
-            return ScriptShaper.Shape(text);
+            string shaped = ScriptShaper.Shape(text);
+            Debug.Log($"[SmartFontApplier] PreprocessText: '{text}' -> '{shaped}'");
+            return shaped;
         }
     }
 }
