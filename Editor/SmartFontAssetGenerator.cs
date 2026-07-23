@@ -51,7 +51,7 @@ namespace MultiLanguageSupporter.Editor
             {
                 { ScriptType.Latin, "NotoSans-Regular.ttf" },
                 { ScriptType.Tamil, "Sai-Sai.ttf" },
-                { ScriptType.Hindi, "NotoSansDevanagari-Regular.ttf" },
+                { ScriptType.Hindi, "Kruti Dev 010.ttf" },
                 { ScriptType.Bengali, "NotoSansBengali-Regular.ttf" },
                 { ScriptType.Kannada, "NotoSansKannada-Regular.ttf" },
                 { ScriptType.Malayalam, "NotoSansMalayalam-Regular.ttf" },

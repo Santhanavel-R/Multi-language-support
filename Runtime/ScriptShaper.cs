@@ -26,51 +26,7 @@ namespace MultiLanguageSupporter
 
         private static string ShapeDevanagari(string input)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-
-                if (IsDevanagariConsonant(c))
-                {
-                    // Find the end of the consonant cluster (joined by U+094D halant)
-                    int clusterEnd = i;
-                    while (clusterEnd + 1 < input.Length)
-                    {
-                        if (input[clusterEnd + 1] == '\u094D')
-                        {
-                            clusterEnd += 1;
-                            if (clusterEnd + 1 < input.Length && IsDevanagariConsonant(input[clusterEnd + 1]))
-                            {
-                                clusterEnd += 1;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
-                    if (clusterEnd + 1 < input.Length && input[clusterEnd + 1] == '\u093F') // ि (short i matra)
-                    {
-                        sb.Append('\u093F');
-                        sb.Append(input.Substring(i, clusterEnd - i + 1));
-                        i = clusterEnd + 1;
-                        continue;
-                    }
-                }
-                sb.Append(c);
-            }
-            return sb.ToString();
-        }
-
-        private static bool IsDevanagariConsonant(char c)
-        {
-            return c >= '\u0915' && c <= '\u0939';
+            return UnicodeToKrutidev.Convert(input);
         }
 
         private static string ShapeBengali(string input)
