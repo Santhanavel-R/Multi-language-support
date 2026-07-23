@@ -11,19 +11,11 @@ namespace MultiLanguageSupporter
         }
     }
 
-    public class SmartFontPreprocessor : ITextPreprocessor
-    {
-        public string PreprocessText(string text)
-        {
-            return ScriptShaper.Shape(text);
-        }
-    }
-
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("SmartFont/Smart Font Applier")]
     [ExecuteAlways]
     [DefaultExecutionOrder(-100)]
-    public class SmartFontApplier : MonoBehaviour
+    public class SmartFontApplier : MonoBehaviour, ITextPreprocessor
     {
         [Tooltip("Optional database override. If null, the default database will be resolved.")]
         [SerializeField]
@@ -39,7 +31,6 @@ namespace MultiLanguageSupporter
 
         private TMP_Text textComponent;
         private string lastText;
-        private SmartFontPreprocessor preprocessor;
 
         private void Awake()
         {
@@ -65,15 +56,17 @@ namespace MultiLanguageSupporter
             }
         }
 
+        private void OnValidate()
+        {
+            InitializePreprocessor();
+            if (resolveOnStart)
+            {
+                Resolve();
+            }
+        }
+
         private void Update()
         {
-            if (textComponent == null)
-            {
-                textComponent = GetComponent<TMP_Text>();
-            }
-
-            InitializePreprocessor();
-
             if (observeTextChanges && textComponent != null)
             {
                 string currentText = textComponent.text;
@@ -87,13 +80,14 @@ namespace MultiLanguageSupporter
 
         private void InitializePreprocessor()
         {
-            if (textComponent != null && (textComponent.textPreprocessor == null || !(textComponent.textPreprocessor is SmartFontPreprocessor)))
+            if (textComponent == null)
             {
-                if (preprocessor == null)
-                {
-                    preprocessor = new SmartFontPreprocessor();
-                }
-                textComponent.textPreprocessor = preprocessor;
+                textComponent = GetComponent<TMP_Text>();
+            }
+
+            if (textComponent != null && textComponent.textPreprocessor != this)
+            {
+                textComponent.textPreprocessor = this;
             }
         }
 
@@ -106,10 +100,14 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
-                InitializePreprocessor();
                 textComponent.FixFont(databaseOverride);
                 lastText = textComponent.text;
             }
+        }
+
+        public string PreprocessText(string text)
+        {
+            return ScriptShaper.Shape(text);
         }
     }
 }

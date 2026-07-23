@@ -6,7 +6,7 @@ namespace MultiLanguageSupporter
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("Multi-Language/Multi-Language Text")]
     [ExecuteAlways]
-    public class MultiLanguageText : MonoBehaviour
+    public class MultiLanguageText : MonoBehaviour, ITextPreprocessor
     {
         [Tooltip("Optional database override. If null, the default database in Resources will be used.")]
         [SerializeField]
@@ -18,7 +18,6 @@ namespace MultiLanguageSupporter
         private string textContent = "";
 
         private TMP_Text textComponent;
-        private SmartFontPreprocessor preprocessor;
 
         public string Text
         {
@@ -58,13 +57,9 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
-            if (textComponent != null && (textComponent.textPreprocessor == null || !(textComponent.textPreprocessor is SmartFontPreprocessor)))
+            if (textComponent != null && textComponent.textPreprocessor != this)
             {
-                if (preprocessor == null)
-                {
-                    preprocessor = new SmartFontPreprocessor();
-                }
-                textComponent.textPreprocessor = preprocessor;
+                textComponent.textPreprocessor = this;
             }
         }
 
@@ -75,13 +70,16 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
-            InitializePreprocessor();
-
             if (textComponent != null)
             {
                 textComponent.text = textContent;
                 textComponent.FixFont(databaseOverride);
             }
+        }
+
+        public string PreprocessText(string text)
+        {
+            return ScriptShaper.Shape(text);
         }
     }
 }
