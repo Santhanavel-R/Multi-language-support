@@ -1,0 +1,121 @@
+using UnityEditor;
+using UnityEngine;
+using TMPro;
+using System.IO;
+using System.Collections.Generic;
+
+namespace MultiLanguageSupporter.Editor
+{
+    [InitializeOnLoad]
+    public static class SmartFontAssetGenerator
+    {
+        private const string PackagePath = "Packages/com.smartfont.universal";
+        private const string RuntimePath = "Runtime";
+
+        static SmartFontAssetGenerator()
+        {
+            // Delay the call so that the AssetDatabase is fully loaded and ready
+            EditorApplication.delayCall += AutoGenerateIfNeeded;
+        }
+
+        private static void AutoGenerateIfNeeded()
+        {
+            string dbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
+            FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
+            if (database == null)
+            {
+                Debug.Log("[SmartFont] Default database not found. Starting automatic generation of package assets...");
+                Generate();
+            }
+        }
+        
+        [MenuItem("Window/SmartFont/Generate Package Assets")]
+        public static void Generate()
+        {
+            Debug.Log("[SmartFont] Starting package asset generation...");
+
+            // Create directories if they don't exist
+            string fontsResourcesDir = Path.Combine(Application.dataPath, "..", PackagePath, RuntimePath, "Resources", "Fonts");
+            string resourcesDir = Path.Combine(Application.dataPath, "..", PackagePath, RuntimePath, "Resources");
+            
+            if (!Directory.Exists(fontsResourcesDir))
+            {
+                Directory.CreateDirectory(fontsResourcesDir);
+            }
+
+            AssetDatabase.Refresh();
+
+            // Source TTF/OTF files
+            var fontFiles = new Dictionary<ScriptType, string>
+            {
+                { ScriptType.Latin, "NotoSans-Regular.ttf" },
+                { ScriptType.Tamil, "NotoSansTamil-Regular.ttf" },
+                { ScriptType.Hindi, "NotoSansDevanagari-Regular.ttf" },
+                { ScriptType.Kannada, "NotoSansKannada-Regular.ttf" },
+                { ScriptType.Malayalam, "NotoSansMalayalam-Regular.ttf" },
+                { ScriptType.Thai, "NotoSansThai-Regular.ttf" },
+                { ScriptType.Chinese, "ZCOOLXiaoWei-Regular.ttf" },
+                { ScriptType.Korean, "Sunflower-Medium.ttf" }
+            };
+
+            // Map to store generated TMP Font Assets
+            var generatedAssets = new Dictionary<ScriptType, TMP_FontAsset>();
+
+            foreach (var kvp in fontFiles)
+            {
+                ScriptType script = kvp.Key;
+                string ttfName = kvp.Value;
+                
+                string ttfPath = $"{PackagePath}/{RuntimePath}/Fonts/{ttfName}";
+                Font ttfFont = AssetDatabase.LoadAssetAtPath<Font>(ttfPath);
+
+                if (ttfFont == null)
+                {
+                    Debug.LogError($"[SmartFont] Failed to load source TTF font at: {ttfPath}");
+                    continue;
+                }
+
+                string assetPath = $"{PackagePath}/{RuntimePath}/Resources/Fonts/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
+                TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+
+                if (fontAsset == null)
+                {
+                    Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
+                    fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
+                    AssetDatabase.CreateAsset(fontAsset, assetPath);
+                    AssetDatabase.SaveAssets();
+                }
+                else
+                {
+                    Debug.Log($"[SmartFont] Found existing TMP Font Asset for {script} at {assetPath}");
+                }
+
+                generatedAssets[script] = fontAsset;
+            }
+
+            // Create or update FontDatabase
+            string dbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
+            FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
+
+            if (database == null)
+            {
+                Debug.Log($"[SmartFont] Creating new SmartFontDefaultDatabase at {dbPath}...");
+                database = ScriptableObject.CreateInstance<FontDatabase>();
+                AssetDatabase.CreateAsset(database, dbPath);
+                AssetDatabase.SaveAssets();
+            }
+
+            // Configure mappings
+            foreach (var kvp in generatedAssets)
+            {
+                database.SetFontForScript(kvp.Key, kvp.Value);
+            }
+            
+            EditorUtility.SetDirty(database);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log("[SmartFont] Package asset generation completed successfully!");
+        }
+    }
+}
