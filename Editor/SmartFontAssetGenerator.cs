@@ -99,7 +99,7 @@ namespace MultiLanguageSupporter.Editor
                             // Fix Unity 0x0 texture serialization crash by resizing
                             if (tex.width == 0 || tex.height == 0)
                             {
-                                tex.Resize(256, 256);
+                                tex.Reinitialize(256, 256);
                                 tex.Apply(false);
                             }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
