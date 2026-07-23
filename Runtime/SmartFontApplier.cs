@@ -5,9 +5,9 @@ namespace MultiLanguageSupporter
 {
     public static class SmartFontExtensions
     {
-        public static void FixFont(this TMP_Text textComponent, FontDatabase database = null)
+        public static void FixFont(this TMP_Text textComponent, FontDatabase database = null, string originalText = null)
         {
-            FontResolver.ResolveAndApply(textComponent, database);
+            FontResolver.ResolveAndApply(textComponent, database, originalText);
         }
     }
 
@@ -78,7 +78,7 @@ namespace MultiLanguageSupporter
                 {
                     textComponent.text = shapedText;
                 }
-                textComponent.FixFont(databaseOverride);
+                textComponent.FixFont(databaseOverride, originalText);
                 lastText = textComponent.text;
             }
         }

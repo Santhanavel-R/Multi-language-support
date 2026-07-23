@@ -64,7 +64,7 @@ namespace MultiLanguageSupporter
             {
                 string shapedText = ScriptShaper.Shape(textContent);
                 textComponent.text = shapedText;
-                textComponent.FixFont(databaseOverride);
+                textComponent.FixFont(databaseOverride, textContent);
             }
         }
     }

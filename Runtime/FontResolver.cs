@@ -23,7 +23,7 @@ namespace MultiLanguageSupporter
             return defaultDatabase;
         }
 
-        public static void ResolveAndApply(TMP_Text textComponent, FontDatabase database = null)
+        public static void ResolveAndApply(TMP_Text textComponent, FontDatabase database = null, string originalText = null)
         {
             if (textComponent == null) return;
 
@@ -38,7 +38,7 @@ namespace MultiLanguageSupporter
                 return;
             }
 
-            string text = textComponent.text;
+            string text = !string.IsNullOrEmpty(originalText) ? originalText : textComponent.text;
             if (string.IsNullOrEmpty(text)) return;
 
             // Detect dominant script
