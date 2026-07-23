@@ -91,6 +91,7 @@ namespace MultiLanguageSupporter.Editor
                 {
                     Debug.Log($"[SmartFont] Healthy dynamic font asset already exists for {script} at {assetPath}, skipping generation.");
                     generatedAssets[script] = existingAsset;
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); // Refresh UI foldout arrow
                     continue;
                 }
 
@@ -134,6 +135,7 @@ namespace MultiLanguageSupporter.Editor
                 
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); // Refresh UI foldout arrow
                 generatedAssets[script] = fontAsset;
             }
 
