@@ -18,73 +18,10 @@ namespace MultiLanguageSupporter
 
         private static string ShapeTamil(string input)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
+            if (string.IsNullOrEmpty(input)) return input;
 
-                if (IsTamilConsonant(c))
-                {
-                    int clusterEnd = i;
-
-                    if (clusterEnd + 1 < input.Length)
-                    {
-                        char next = input[clusterEnd + 1];
-                        if (next == '\u0BC6') // ெ (short e)
-                        {
-                            sb.Append('\u0BC6');
-                            sb.Append(c);
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u0BC7') // ே (long e)
-                        {
-                            sb.Append('\u0BC7');
-                            sb.Append(c);
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u0BC8') // ை (ai)
-                        {
-                            sb.Append('\u0BC8');
-                            sb.Append(c);
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u0BCA') // ொ (short o) -> ெ + consonant + ா
-                        {
-                            sb.Append('\u0BC6');
-                            sb.Append(c);
-                            sb.Append('\u0BBE');
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u0BCB') // ோ (long o) -> ே + consonant + ா
-                        {
-                            sb.Append('\u0BC7');
-                            sb.Append(c);
-                            sb.Append('\u0BBE');
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u0BCC') // ௌ (au) -> ெ + consonant + ள
-                        {
-                            sb.Append('\u0BC6');
-                            sb.Append(c);
-                            sb.Append('\u0BD7');
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                    }
-                }
-                sb.Append(c);
-            }
-            return sb.ToString();
-        }
-
-        private static bool IsTamilConsonant(char c)
-        {
-            return (c >= '\u0B95' && c <= '\u0BB9') || c == '\u0BD0';
+            // Delegate to the precompiled TamilEncoder library to convert Unicode to legacy TSCII encoding
+            return TamilEncoder.TamilEncoding.ConvertFromUnicode(input, TamilEncoder.TamilFontEncoding.TSCII);
         }
 
         private static string ShapeDevanagari(string input)
