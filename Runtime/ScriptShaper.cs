@@ -25,12 +25,7 @@ namespace MultiLanguageSupporter
 
                 if (IsTamilConsonant(c))
                 {
-                    // Find the end of the consonant cluster (joined by U+0BCD pulli/halant)
                     int clusterEnd = i;
-                    while (clusterEnd + 1 < input.Length && input[clusterEnd + 1] == '\u0BCD')
-                    {
-                        clusterEnd += 2; // skip pulli and next consonant if any
-                    }
 
                     if (clusterEnd + 1 < input.Length)
                     {
@@ -38,28 +33,28 @@ namespace MultiLanguageSupporter
                         if (next == '\u0BC6') // ெ (short e)
                         {
                             sb.Append('\u0BC6');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             i = clusterEnd + 1;
                             continue;
                         }
                         if (next == '\u0BC7') // ே (long e)
                         {
                             sb.Append('\u0BC7');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             i = clusterEnd + 1;
                             continue;
                         }
                         if (next == '\u0BC8') // ை (ai)
                         {
                             sb.Append('\u0BC8');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             i = clusterEnd + 1;
                             continue;
                         }
                         if (next == '\u0BCA') // ொ (short o) -> ெ + consonant + ா
                         {
                             sb.Append('\u0BC6');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             sb.Append('\u0BBE');
                             i = clusterEnd + 1;
                             continue;
@@ -67,7 +62,7 @@ namespace MultiLanguageSupporter
                         if (next == '\u0BCB') // ோ (long o) -> ே + consonant + ா
                         {
                             sb.Append('\u0BC7');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             sb.Append('\u0BBE');
                             i = clusterEnd + 1;
                             continue;
@@ -75,7 +70,7 @@ namespace MultiLanguageSupporter
                         if (next == '\u0BCC') // ௌ (au) -> ெ + consonant + ள
                         {
                             sb.Append('\u0BC6');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
+                            sb.Append(c);
                             sb.Append('\u0BD7');
                             i = clusterEnd + 1;
                             continue;
