@@ -49,36 +49,6 @@ namespace MultiLanguageSupporter
             {
                 textComponent.font = primaryFont;
             }
-
-            // Setup fallbacks for mixed-language rendering
-            SetupFallbackChains(dominant, database);
-        }
-
-        private static void SetupFallbackChains(ScriptType dominant, FontDatabase database)
-        {
-            TMP_FontAsset primaryFont = database.GetFontForScript(dominant);
-            if (primaryFont == null) return;
-
-            // Ensure fallback list is initialized
-            if (primaryFont.fallbackFontAssetTable == null)
-            {
-                primaryFont.fallbackFontAssetTable = new List<TMP_FontAsset>();
-            }
-
-            // Go through all other supported scripts and add them to the fallback list if not present
-            foreach (ScriptType script in System.Enum.GetValues(typeof(ScriptType)))
-            {
-                if (script == ScriptType.Unknown || script == dominant) continue;
-
-                TMP_FontAsset fallbackFont = database.GetFontForScript(script);
-                if (fallbackFont != null && fallbackFont != primaryFont)
-                {
-                    if (!primaryFont.fallbackFontAssetTable.Contains(fallbackFont))
-                    {
-                        primaryFont.fallbackFontAssetTable.Add(fallbackFont);
-                    }
-                }
-            }
         }
     }
 }

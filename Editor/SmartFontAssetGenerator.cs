@@ -84,6 +84,21 @@ namespace MultiLanguageSupporter.Editor
                     Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
                     fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
                     AssetDatabase.CreateAsset(fontAsset, assetPath);
+                    
+                    // Attach atlas textures as sub-assets so they are saved to disk!
+                    if (fontAsset.atlasTextures != null)
+                    {
+                        for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+                        {
+                            Texture2D tex = fontAsset.atlasTextures[i];
+                            if (tex != null)
+                            {
+                                tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
+                                AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            }
+                        }
+                    }
+                    
                     AssetDatabase.SaveAssets();
                 }
                 else
@@ -92,6 +107,33 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 generatedAssets[script] = fontAsset;
+            }
+
+            // Setup fallback chains in Editor
+            foreach (var kvp in generatedAssets)
+            {
+                TMP_FontAsset primaryFont = kvp.Value;
+                if (primaryFont == null) continue;
+
+                if (primaryFont.fallbackFontAssetTable == null)
+                {
+                    primaryFont.fallbackFontAssetTable = new List<TMP_FontAsset>();
+                }
+                else
+                {
+                    primaryFont.fallbackFontAssetTable.Clear();
+                }
+
+                foreach (var otherKvp in generatedAssets)
+                {
+                    if (otherKvp.Key == kvp.Key) continue; // Don't add itself as a fallback
+                    if (otherKvp.Value != null)
+                    {
+                        primaryFont.fallbackFontAssetTable.Add(otherKvp.Value);
+                    }
+                }
+
+                EditorUtility.SetDirty(primaryFont);
             }
 
             // Create or update FontDatabase
