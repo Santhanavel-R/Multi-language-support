@@ -95,35 +95,38 @@ namespace MultiLanguageSupporter.Editor
                     AtlasPopulationMode.Dynamic,
                     true // enableMultiAtlasSupport
                 );
-                // Replace the 0x0 texture with a clean 1024x1024 texture to prevent serialization crash and corruption
+                // Setup clean 1024x1024 texture and material, keeping references separate first
+                Texture2D tex = null;
                 if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
                 {
-                    fontAsset.atlasTextures[0] = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
+                    tex = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
+                    tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
+                    fontAsset.atlasTextures[0] = null; // Detach to prevent nested serialization during CreateAsset
                 }
 
+                Material mat = fontAsset.material;
+                if (mat != null)
+                {
+                    mat.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    fontAsset.material = null; // Detach to prevent nested serialization during CreateAsset
+                }
+
+                // Create main asset on disk
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
-                
-                // Attach atlas textures as sub-assets so they are saved to disk!
-                if (fontAsset.atlasTextures != null)
+
+                // Add sub-assets to the main asset container
+                if (tex != null)
                 {
-                    for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
-                    {
-                        Texture2D tex = fontAsset.atlasTextures[i];
-                        if (tex != null)
-                        {
-                            tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
-                            EditorUtility.SetDirty(tex);
-                        }
-                    }
+                    AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                    EditorUtility.SetDirty(tex);
+                    fontAsset.atlasTextures[0] = tex; // Restore reference
                 }
 
-                // Attach default material as sub-asset so it is saved to disk!
-                if (fontAsset.material != null)
+                if (mat != null)
                 {
-                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
-                    EditorUtility.SetDirty(fontAsset.material);
+                    AssetDatabase.AddObjectToAsset(mat, fontAsset);
+                    EditorUtility.SetDirty(mat);
+                    fontAsset.material = mat; // Restore reference
                 }
                 
                 EditorUtility.SetDirty(fontAsset);
