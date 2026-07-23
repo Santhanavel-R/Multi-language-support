@@ -96,6 +96,12 @@ namespace MultiLanguageSupporter.Editor
                         Texture2D tex = fontAsset.atlasTextures[i];
                         if (tex != null)
                         {
+                            // Fix Unity 0x0 texture serialization crash by resizing
+                            if (tex.width == 0 || tex.height == 0)
+                            {
+                                tex.Resize(256, 256);
+                                tex.Apply(false);
+                            }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
                             AssetDatabase.AddObjectToAsset(tex, fontAsset);
                             EditorUtility.SetDirty(tex);
