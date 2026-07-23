@@ -98,6 +98,7 @@ namespace MultiLanguageSupporter.Editor
                         {
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
                             AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            EditorUtility.SetDirty(tex);
                         }
                     }
                 }
@@ -107,8 +108,10 @@ namespace MultiLanguageSupporter.Editor
                 {
                     fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
                     AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    EditorUtility.SetDirty(fontAsset.material);
                 }
                 
+                EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
                 generatedAssets[script] = fontAsset;
             }
