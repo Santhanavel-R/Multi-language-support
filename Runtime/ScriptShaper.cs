@@ -69,7 +69,99 @@ namespace MultiLanguageSupporter
                 return input;
             }
 
-            return UnicodeToKrutidev.Convert(input);
+            StringBuilder sb = new StringBuilder();
+            bool insideTag = false;
+            StringBuilder currentHindi = new StringBuilder();
+            StringBuilder currentLatin = new StringBuilder();
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+
+                if (c == '<')
+                {
+                    FlushDevAndLatin(sb, currentHindi, currentLatin);
+                    insideTag = true;
+                    sb.Append(c);
+                }
+                else if (c == '>')
+                {
+                    insideTag = false;
+                    sb.Append(c);
+                }
+                else if (insideTag)
+                {
+                    sb.Append(c);
+                }
+                else
+                {
+                    bool isLatinAlphaNum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+                    
+                    if (isLatinAlphaNum)
+                    {
+                        if (currentHindi.Length > 0)
+                        {
+                            FlushDevAndLatin(sb, currentHindi, currentLatin);
+                        }
+                        currentLatin.Append(c);
+                    }
+                    else
+                    {
+                        if (currentLatin.Length > 0 && (c == ' ' || c == '.' || c == ',' || c == '!' || c == '?' || c == '-' || c == '(' || c == ')' || c == '\'' || c == '"'))
+                        {
+                            currentLatin.Append(c);
+                        }
+                        else
+                        {
+                            if (currentLatin.Length > 0)
+                            {
+                                FlushDevAndLatin(sb, currentHindi, currentLatin);
+                            }
+                            currentHindi.Append(c);
+                        }
+                    }
+                }
+            }
+
+            FlushDevAndLatin(sb, currentHindi, currentLatin);
+            return sb.ToString();
+        }
+
+        private static void FlushDevAndLatin(StringBuilder sb, StringBuilder hindi, StringBuilder latin)
+        {
+            if (hindi.Length > 0)
+            {
+                sb.Append(UnicodeToKrutidev.Convert(hindi.ToString()));
+                hindi.Clear();
+            }
+            if (latin.Length > 0)
+            {
+                string latStr = latin.ToString();
+                
+                string trimmed = latStr.TrimEnd(' ', '.', ',', '!', '?', '-', '(', ')', '\'', '"');
+                string trailing = latStr.Substring(trimmed.Length);
+                
+                string cleanLatin = trimmed.TrimStart(' ', '.', ',', '!', '?', '-', '(', ')', '\'', '"');
+                string leading = trimmed.Substring(0, trimmed.Length - cleanLatin.Length);
+
+                if (cleanLatin.Length > 0)
+                {
+                    if (leading.Length > 0)
+                    {
+                        sb.Append(UnicodeToKrutidev.Convert(leading));
+                    }
+                    sb.Append("<font=\"NotoSans-Regular SDF\">").Append(cleanLatin).Append("</font>");
+                    if (trailing.Length > 0)
+                    {
+                        sb.Append(UnicodeToKrutidev.Convert(trailing));
+                    }
+                }
+                else
+                {
+                    sb.Append(UnicodeToKrutidev.Convert(latStr));
+                }
+                latin.Clear();
+            }
         }
 
         private static string ShapeBengali(string input)
