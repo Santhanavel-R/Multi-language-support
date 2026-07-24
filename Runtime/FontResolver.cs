@@ -68,22 +68,30 @@ namespace MultiLanguageSupporter
         {
             if (string.IsNullOrEmpty(text)) return false;
 
-            bool insideTag = false;
+            bool insideFontBlock = false;
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
-                if (c == '<')
+                if (c == '<' && i < text.Length - 1)
                 {
-                    insideTag = true;
-                    continue;
-                }
-                if (c == '>')
-                {
-                    insideTag = false;
-                    continue;
+                    int closeIdx = text.IndexOf('>', i);
+                    if (closeIdx != -1)
+                    {
+                        string tag = text.Substring(i, closeIdx - i + 1).ToLowerInvariant();
+                        if (tag.StartsWith("<font"))
+                        {
+                            insideFontBlock = true;
+                        }
+                        else if (tag.StartsWith("</font"))
+                        {
+                            insideFontBlock = false;
+                        }
+                        i = closeIdx;
+                        continue;
+                    }
                 }
 
-                if (insideTag)
+                if (insideFontBlock)
                 {
                     continue;
                 }

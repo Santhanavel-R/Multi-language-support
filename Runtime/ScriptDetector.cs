@@ -41,9 +41,29 @@ namespace MultiLanguageSupporter
             int validChars = 0;
             bool hasNonLatin = false;
 
+            bool insideFontBlock = false;
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
+
+                if (insideFontBlock)
+                {
+                    if (c == '<' && i < text.Length - 1)
+                    {
+                        int closeIdx = text.IndexOf('>', i);
+                        if (closeIdx != -1)
+                        {
+                            string tag = text.Substring(i, closeIdx - i + 1).ToLowerInvariant();
+                            if (tag.StartsWith("</font"))
+                            {
+                                insideFontBlock = false;
+                                i = closeIdx;
+                            }
+                            continue;
+                        }
+                    }
+                    continue;
+                }
 
                 if (char.IsWhiteSpace(c) || char.IsPunctuation(c) || char.IsControl(c) || char.IsDigit(c) || c == '<' || c == '>')
                 {
@@ -52,6 +72,11 @@ namespace MultiLanguageSupporter
                         int closeIdx = text.IndexOf('>', i);
                         if (closeIdx != -1)
                         {
+                            string tag = text.Substring(i, closeIdx - i + 1).ToLowerInvariant();
+                            if (tag.StartsWith("<font"))
+                            {
+                                insideFontBlock = true;
+                            }
                             i = closeIdx;
                             continue;
                         }
