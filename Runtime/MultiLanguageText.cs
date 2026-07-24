@@ -70,7 +70,11 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
-                textComponent.text = textContent;
+                string processedText = textComponent.textPreprocessor != null
+                    ? textComponent.textPreprocessor.PreprocessText(textContent)
+                    : textContent;
+
+                textComponent.text = processedText;
                 textComponent.FixFont(databaseOverride, textContent);
             }
         }
@@ -78,7 +82,12 @@ namespace MultiLanguageSupporter
         public string PreprocessText(string text)
         {
             string shaped = ScriptShaper.Shape(text);
-            Debug.Log($"[MultiLanguageText] PreprocessText: '{text}' -> '{shaped}'");
+#if UNITY_EDITOR
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"[MultiLanguageText] PreprocessText: '{text}' -> '{shaped}'");
+            }
+#endif
             return shaped;
         }
     }

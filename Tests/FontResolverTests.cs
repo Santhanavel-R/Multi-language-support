@@ -51,5 +51,25 @@ namespace MultiLanguageSupporter.Tests
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void FontResolver_UsesLatinFallbackWhenScriptMappingMissing()
+        {
+            var go = new GameObject("FallbackText");
+            var textComponent = go.AddComponent<TextMeshPro>();
+            var fallbackDatabase = ScriptableObject.CreateInstance<FontDatabase>();
+            var latinFont = ScriptableObject.CreateInstance<TMP_FontAsset>();
+
+            fallbackDatabase.SetFontForScript(ScriptType.Latin, latinFont);
+            textComponent.text = "नमस्ते";
+
+            FontResolver.ResolveAndApply(textComponent, fallbackDatabase);
+
+            Assert.AreEqual(latinFont, textComponent.font);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(fallbackDatabase);
+            Object.DestroyImmediate(latinFont);
+        }
     }
 }

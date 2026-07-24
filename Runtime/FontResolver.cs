@@ -41,9 +41,13 @@ namespace MultiLanguageSupporter
             string text = !string.IsNullOrEmpty(originalText) ? originalText : textComponent.text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // Detect dominant script
             ScriptType dominant = ScriptDetector.DetectDominantScript(text);
             TMP_FontAsset primaryFont = database.GetFontForScript(dominant);
+
+            if (primaryFont == null)
+            {
+                primaryFont = database.GetFontForScript(ScriptType.Latin);
+            }
 
             if (primaryFont != null)
             {

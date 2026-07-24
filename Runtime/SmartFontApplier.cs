@@ -98,6 +98,11 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
+                string processedText = textComponent.textPreprocessor != null
+                    ? textComponent.textPreprocessor.PreprocessText(textComponent.text)
+                    : textComponent.text;
+
+                textComponent.text = processedText;
                 textComponent.FixFont(databaseOverride);
                 lastText = textComponent.text;
             }
@@ -106,7 +111,12 @@ namespace MultiLanguageSupporter
         public string PreprocessText(string text)
         {
             string shaped = ScriptShaper.Shape(text);
-            Debug.Log($"[SmartFontApplier] PreprocessText: '{text}' -> '{shaped}'");
+#if UNITY_EDITOR
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"[SmartFontApplier] PreprocessText: '{text}' -> '{shaped}'");
+            }
+#endif
             return shaped;
         }
     }

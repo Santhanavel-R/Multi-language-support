@@ -26,8 +26,7 @@ namespace MultiLanguageSupporter
             }
 
             var counts = new Dictionary<ScriptType, int>();
-            
-            // Initialize counts
+
             counts[ScriptType.Latin] = 0;
             counts[ScriptType.Tamil] = 0;
             counts[ScriptType.Hindi] = 0;
@@ -40,15 +39,14 @@ namespace MultiLanguageSupporter
             counts[ScriptType.Unknown] = 0;
 
             int validChars = 0;
+            bool hasNonLatin = false;
 
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
 
-                // Ignore whitespace, punctuation, control characters, digits, and basic symbols
                 if (char.IsWhiteSpace(c) || char.IsPunctuation(c) || char.IsControl(c) || char.IsDigit(c) || c == '<' || c == '>')
                 {
-                    // Basic TMP tag bypass check (rough approximation)
                     if (c == '<' && i < text.Length - 1)
                     {
                         int closeIdx = text.IndexOf('>', i);
@@ -64,6 +62,11 @@ namespace MultiLanguageSupporter
                 validChars++;
                 ScriptType type = GetCharScriptType(c);
                 counts[type]++;
+
+                if (type != ScriptType.Latin && type != ScriptType.Unknown)
+                {
+                    hasNonLatin = true;
+                }
             }
 
             if (validChars == 0)
@@ -73,6 +76,7 @@ namespace MultiLanguageSupporter
 
             ScriptType dominant = ScriptType.Latin;
             int maxCount = -1;
+            int latinCount = counts[ScriptType.Latin];
 
             foreach (var kvp in counts)
             {
@@ -85,7 +89,15 @@ namespace MultiLanguageSupporter
                 }
             }
 
-            // Fallback if no specific script found but unknown has characters
+            if (hasNonLatin)
+            {
+                int nonLatinCount = validChars - latinCount;
+                if (nonLatinCount > 0 && nonLatinCount >= latinCount)
+                {
+                    return dominant;
+                }
+            }
+
             if (maxCount == 0 && counts[ScriptType.Unknown] > 0)
             {
                 return ScriptType.Unknown;

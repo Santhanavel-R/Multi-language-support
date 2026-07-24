@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using UnityEngine;
+using TMPro;
 
 namespace MultiLanguageSupporter.Tests
 {
@@ -22,6 +24,24 @@ namespace MultiLanguageSupporter.Tests
         public void DetectDominantScript_Hindi_ReturnsHindi()
         {
             Assert.AreEqual(ScriptType.Hindi, ScriptDetector.DetectDominantScript("नमस्ते"));
+        }
+
+        [Test]
+        public void DetectDominantScript_Bengali_ReturnsBengali()
+        {
+            Assert.AreEqual(ScriptType.Bengali, ScriptDetector.DetectDominantScript("বাংলা"));
+        }
+
+        [Test]
+        public void DetectDominantScript_LatinAndTamilTie_ReturnsTamil()
+        {
+            Assert.AreEqual(ScriptType.Tamil, ScriptDetector.DetectDominantScript("A வ"));
+        }
+
+        [Test]
+        public void DetectDominantScript_MixedLatinAndHindi_ReturnsHindi()
+        {
+            Assert.AreEqual(ScriptType.Hindi, ScriptDetector.DetectDominantScript("Hello नमस्ते"));
         }
 
         [Test]
@@ -59,6 +79,20 @@ namespace MultiLanguageSupporter.Tests
         {
             // Mixed text with more Tamil than English
             Assert.AreEqual(ScriptType.Tamil, ScriptDetector.DetectDominantScript("Hello வணக்கம்"));
+        }
+
+        [Test]
+        public void MultiLanguageText_PreprocessesTamilTextBeforeApplying()
+        {
+            var go = new GameObject("MultiLanguageTextTest");
+            var textComponent = go.AddComponent<TextMeshPro>();
+            var multiLanguageText = go.AddComponent<MultiLanguageText>();
+
+            multiLanguageText.Text = "வணக்கம்";
+
+            Assert.IsTrue(textComponent.text.Contains("<font=\"SaiSaiSDF\">"));
+
+            Object.DestroyImmediate(go);
         }
     }
 }
