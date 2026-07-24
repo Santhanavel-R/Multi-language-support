@@ -22,15 +22,24 @@ namespace MultiLanguageSupporter.Editor
         {
             try
             {
+                // Resolve the physical path of the package
+                string physicalPath = Path.GetFullPath(PackagePath);
+                
+                // If it is in the Library/PackageCache folder, it is logically immutable in Unity!
+                if (physicalPath.Contains("Library/PackageCache") || physicalPath.Contains("Library\\PackageCache"))
+                {
+                    return false;
+                }
+                
                 string testPath = $"{PackagePath}/{RuntimePath}/Resources/write_test.txt";
-                string physicalPath = Path.GetFullPath(testPath);
-                string dir = Path.GetDirectoryName(physicalPath);
+                string testPhysicalPath = Path.GetFullPath(testPath);
+                string dir = Path.GetDirectoryName(testPhysicalPath);
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
                 }
-                File.WriteAllText(physicalPath, "test");
-                File.Delete(physicalPath);
+                File.WriteAllText(testPhysicalPath, "test");
+                File.Delete(testPhysicalPath);
                 return true;
             }
             catch
