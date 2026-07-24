@@ -246,5 +246,38 @@ namespace MultiLanguageSupporter.Editor
 
             Debug.Log("[SmartFont] Package asset generation completed successfully!");
         }
+
+        [MenuItem("Window/SmartFont/Clear Package Cache & Resolve")]
+        public static void ClearCacheAndResolve()
+        {
+            Debug.Log("[SmartFont] Clearing PackageCache for com.smartfont.universal...");
+            
+            try
+            {
+                string cachePath = Path.GetFullPath("Library/PackageCache");
+                if (Directory.Exists(cachePath))
+                {
+                    string[] dirs = Directory.GetDirectories(cachePath, "com.smartfont.universal@*");
+                    foreach (var dir in dirs)
+                    {
+                        Debug.Log($"[SmartFont] Deleting cache directory: {dir}");
+                        var dirInfo = new DirectoryInfo(dir);
+                        foreach (var file in dirInfo.GetFiles("*", SearchOption.AllDirectories))
+                        {
+                            file.Attributes = FileAttributes.Normal;
+                        }
+                        Directory.Delete(dir, true);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[SmartFont] Note: Could not delete cache folder directly (might be locked by Unity): {ex.Message}");
+            }
+
+            Debug.Log("[SmartFont] Requesting Unity Package Manager to resolve dependencies...");
+            UnityEditor.PackageManager.Client.Resolve();
+            Debug.Log("[SmartFont] Resolve request sent. Unity will now fetch the latest commit of the package!");
+        }
     }
 }
