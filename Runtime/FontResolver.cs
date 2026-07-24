@@ -44,6 +44,15 @@ namespace MultiLanguageSupporter
             ScriptType dominant = ScriptDetector.DetectDominantScript(text);
             TMP_FontAsset primaryFont = database.GetFontForScript(dominant);
 
+            if (dominant != ScriptType.Latin && ContainsLatin(text))
+            {
+                TMP_FontAsset latinFont = database.GetFontForScript(ScriptType.Latin);
+                if (latinFont != null)
+                {
+                    primaryFont = latinFont;
+                }
+            }
+
             if (primaryFont == null)
             {
                 primaryFont = database.GetFontForScript(ScriptType.Latin);
@@ -53,6 +62,38 @@ namespace MultiLanguageSupporter
             {
                 textComponent.font = primaryFont;
             }
+        }
+
+        private static bool ContainsLatin(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+
+            bool insideTag = false;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c == '<')
+                {
+                    insideTag = true;
+                    continue;
+                }
+                if (c == '>')
+                {
+                    insideTag = false;
+                    continue;
+                }
+
+                if (insideTag)
+                {
+                    continue;
+                }
+
+                if (ScriptDetector.GetCharScriptType(c) == ScriptType.Latin)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

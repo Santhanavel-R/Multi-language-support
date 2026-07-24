@@ -38,10 +38,28 @@ namespace MultiLanguageSupporter
 
             StringBuilder sb = new StringBuilder();
             StringBuilder tamilGroup = new StringBuilder();
+            bool insideFontBlock = false;
 
             for (int i = 0; i < input.Length; i++)
             {
                 char c = input[i];
+
+                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
+                {
+                    sb.Append(tag);
+                    string lowerTag = tag.ToLowerInvariant();
+                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
+                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
+                    i = tagEndIndex;
+                    continue;
+                }
+
+                if (insideFontBlock)
+                {
+                    sb.Append(c);
+                    continue;
+                }
+
                 if (c >= 0x0B80 && c <= 0x0BFF)
                 {
                     tamilGroup.Append(c);
@@ -61,7 +79,7 @@ namespace MultiLanguageSupporter
             if (tamilGroup.Length > 0)
             {
                 string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                sb.Append("<font=").Append('"').Append("Sai-Sai SDF").Append("\">").Append(converted).Append("</font>");
+                sb.Append("<font=\"Sai-Sai SDF\">").Append(converted).Append("</font>");
             }
 
             return sb.ToString();
@@ -88,7 +106,7 @@ namespace MultiLanguageSupporter
             }
 
             StringBuilder sb = new StringBuilder();
-            bool insideTag = false;
+            bool insideFontBlock = false;
             StringBuilder currentHindi = new StringBuilder();
             StringBuilder currentLatin = new StringBuilder();
 
@@ -96,47 +114,45 @@ namespace MultiLanguageSupporter
             {
                 char c = input[i];
 
-                if (c == '<')
+                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
                 {
-                    FlushDevAndLatin(sb, currentHindi, currentLatin);
-                    insideTag = true;
-                    sb.Append(c);
+                    sb.Append(tag);
+                    string lowerTag = tag.ToLowerInvariant();
+                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
+                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
+                    i = tagEndIndex;
+                    continue;
                 }
-                else if (c == '>')
+
+                if (insideFontBlock)
                 {
-                    insideTag = false;
                     sb.Append(c);
+                    continue;
                 }
-                else if (insideTag)
+
+                bool isLatinAlphaNum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+                
+                if (isLatinAlphaNum)
                 {
-                    sb.Append(c);
+                    if (currentHindi.Length > 0)
+                    {
+                        FlushDevAndLatin(sb, currentHindi, currentLatin);
+                    }
+                    currentLatin.Append(c);
                 }
                 else
                 {
-                    bool isLatinAlphaNum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
-                    
-                    if (isLatinAlphaNum)
+                    if (currentLatin.Length > 0 && (c == ' ' || c == '.' || c == ',' || c == '!' || c == '?' || c == '-' || c == '(' || c == ')' || c == '\'' || c == '"'))
                     {
-                        if (currentHindi.Length > 0)
-                        {
-                            FlushDevAndLatin(sb, currentHindi, currentLatin);
-                        }
                         currentLatin.Append(c);
                     }
                     else
                     {
-                        if (currentLatin.Length > 0 && (c == ' ' || c == '.' || c == ',' || c == '!' || c == '?' || c == '-' || c == '(' || c == ')' || c == '\'' || c == '"'))
+                        if (currentLatin.Length > 0)
                         {
-                            currentLatin.Append(c);
+                            FlushDevAndLatin(sb, currentHindi, currentLatin);
                         }
-                        else
-                        {
-                            if (currentLatin.Length > 0)
-                            {
-                                FlushDevAndLatin(sb, currentHindi, currentLatin);
-                            }
-                            currentHindi.Append(c);
-                        }
+                        currentHindi.Append(c);
                     }
                 }
             }
@@ -204,13 +220,30 @@ namespace MultiLanguageSupporter
             }
 
             StringBuilder sb = new StringBuilder();
+            bool insideFontBlock = false;
+
             for (int i = 0; i < input.Length; i++)
             {
                 char c = input[i];
 
+                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
+                {
+                    sb.Append(tag);
+                    string lowerTag = tag.ToLowerInvariant();
+                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
+                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
+                    i = tagEndIndex;
+                    continue;
+                }
+
+                if (insideFontBlock)
+                {
+                    sb.Append(c);
+                    continue;
+                }
+
                 if (IsBengaliConsonant(c))
                 {
-                    // Find the end of the consonant cluster (joined by U+09CD halant)
                     int clusterEnd = i;
                     while (clusterEnd + 1 < input.Length)
                     {
@@ -235,28 +268,28 @@ namespace MultiLanguageSupporter
                     if (clusterEnd + 1 < input.Length)
                     {
                         char next = input[clusterEnd + 1];
-                        if (next == '\u09BF') // ি (short i)
+                        if (next == '\u09BF')
                         {
                             sb.Append('\u09BF');
                             sb.Append(input.Substring(i, clusterEnd - i + 1));
                             i = clusterEnd + 1;
                             continue;
                         }
-                        if (next == '\u09C7') // ে (e)
+                        if (next == '\u09C7')
                         {
                             sb.Append('\u09C7');
                             sb.Append(input.Substring(i, clusterEnd - i + 1));
                             i = clusterEnd + 1;
                             continue;
                         }
-                        if (next == '\u09C8') // ৈ (ai)
+                        if (next == '\u09C8')
                         {
                             sb.Append('\u09C8');
                             sb.Append(input.Substring(i, clusterEnd - i + 1));
                             i = clusterEnd + 1;
                             continue;
                         }
-                        if (next == '\u09CB') // ো (o) -> ে + consonant + া
+                        if (next == '\u09CB')
                         {
                             sb.Append('\u09C7');
                             sb.Append(input.Substring(i, clusterEnd - i + 1));
@@ -264,7 +297,7 @@ namespace MultiLanguageSupporter
                             i = clusterEnd + 1;
                             continue;
                         }
-                        if (next == '\u09CC') // ৌ (au) -> ে + consonant + ৗ
+                        if (next == '\u09CC')
                         {
                             sb.Append('\u09C7');
                             sb.Append(input.Substring(i, clusterEnd - i + 1));
@@ -282,6 +315,20 @@ namespace MultiLanguageSupporter
         private static bool IsBengaliConsonant(char c)
         {
             return c >= '\u0995' && c <= '\u09B9';
+        }
+
+        private static bool TryReadTag(string input, int index, out string tag, out int tagEndIndex)
+        {
+            tag = null;
+            tagEndIndex = index;
+            if (input[index] != '<') return false;
+
+            int closeIndex = input.IndexOf('>', index);
+            if (closeIndex == -1) return false;
+
+            tag = input.Substring(index, closeIndex - index + 1);
+            tagEndIndex = closeIndex;
+            return true;
         }
     }
 }

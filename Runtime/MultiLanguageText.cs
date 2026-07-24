@@ -61,6 +61,37 @@ namespace MultiLanguageSupporter
             }
         }
 
+        private static bool IsAlreadyShaped(string text)
+        {
+            return !string.IsNullOrEmpty(text) && text.Contains("<font=");
+        }
+
+        private static string StripFontTags(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '<' && i + 5 < text.Length && text.Substring(i, 5).ToLowerInvariant() == "<font")
+                {
+                    int close = text.IndexOf('>', i);
+                    if (close == -1) break;
+                    i = close;
+                    continue;
+                }
+                if (text[i] == '<' && i + 6 < text.Length && text.Substring(i, 7).ToLowerInvariant() == "</font>")
+                {
+                    int close = text.IndexOf('>', i);
+                    if (close == -1) break;
+                    i = close;
+                    continue;
+                }
+                sb.Append(text[i]);
+            }
+            return sb.ToString();
+        }
+
         public void ApplyTextAndResolve()
         {
             if (textComponent == null)
@@ -70,9 +101,11 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
-                string processedText = textComponent.textPreprocessor != null
-                    ? textComponent.textPreprocessor.PreprocessText(textContent)
-                    : textContent;
+                string processedText = textContent;
+                if (textComponent.textPreprocessor != null && !IsAlreadyShaped(textContent))
+                {
+                    processedText = textComponent.textPreprocessor.PreprocessText(textContent);
+                }
 
                 textComponent.text = processedText;
                 textComponent.FixFont(databaseOverride, textContent);

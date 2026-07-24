@@ -29,6 +29,8 @@ namespace MultiLanguageSupporter
 
         private TMP_Text textComponent;
         private string lastText;
+        private string lastRawText;
+        private bool ownsPreprocessor = false;
 
         private void Awake()
         {
@@ -76,6 +78,11 @@ namespace MultiLanguageSupporter
             }
         }
 
+        private static bool IsAlreadyShaped(string text)
+        {
+            return !string.IsNullOrEmpty(text) && text.Contains("<font=");
+        }
+
         private void InitializePreprocessor()
         {
             if (textComponent == null)
@@ -83,10 +90,82 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
-            if (textComponent != null && textComponent.textPreprocessor != this)
+            if (textComponent != null)
             {
-                textComponent.textPreprocessor = this;
+                if (textComponent.textPreprocessor != null && textComponent.textPreprocessor != this)
+                {
+                    Debug.LogWarning("[SmartFontApplier] Another TMP text preprocessor is already assigned on this GameObject. SmartFontApplier will not override it to avoid double preprocessing.");
+                    return;
+                }
+
+                if (textComponent.textPreprocessor != this)
+                {
+                    textComponent.textPreprocessor = this;
+                    ownsPreprocessor = true;
+                }
             }
+        }
+
+        private static string StripFontTags(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '<' && i + 5 < text.Length && text.Substring(i, 5).ToLowerInvariant() == "<font")
+                {
+                    int close = text.IndexOf('>', i);
+                    if (close == -1) break;
+                    i = close;
+                    continue;
+                }
+                if (text[i] == '<' && i + 6 < text.Length && text.Substring(i, 7).ToLowerInvariant() == "</font>")
+                {
+                    int close = text.IndexOf('>', i);
+                    if (close == -1) break;
+                    i = close;
+                    continue;
+                }
+                sb.Append(text[i]);
+            }
+            return sb.ToString();
+        }
+
+        private static string GetVisibleTextOutsideFontBlocks(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+
+            var sb = new System.Text.StringBuilder();
+            bool insideFontBlock = false;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (!insideFontBlock && text[i] == '<' && i + 5 < text.Length && text.Substring(i, 5).ToLowerInvariant() == "<font")
+                {
+                    int close = text.IndexOf('>', i);
+                    if (close == -1) break;
+                    insideFontBlock = true;
+                    i = close;
+                    continue;
+                }
+
+                if (insideFontBlock)
+                {
+                    if (text[i] == '<' && i + 6 < text.Length && text.Substring(i, 7).ToLowerInvariant() == "</font>")
+                    {
+                        int close = text.IndexOf('>', i);
+                        if (close == -1) break;
+                        insideFontBlock = false;
+                        i = close;
+                    }
+                    continue;
+                }
+
+                sb.Append(text[i]);
+            }
+
+            return sb.ToString();
         }
 
         public void Resolve()
@@ -98,13 +177,24 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
-                string processedText = textComponent.textPreprocessor != null
-                    ? textComponent.textPreprocessor.PreprocessText(textComponent.text)
-                    : textComponent.text;
+                string currentText = textComponent.text;
+                bool alreadyShaped = IsAlreadyShaped(currentText);
+                string originalText = alreadyShaped ? (!string.IsNullOrEmpty(lastRawText) ? lastRawText : GetVisibleTextOutsideFontBlocks(currentText)) : currentText;
+                string processedText = currentText;
+
+                if (!alreadyShaped && textComponent.textPreprocessor != null)
+                {
+                    processedText = textComponent.textPreprocessor.PreprocessText(currentText);
+                }
 
                 textComponent.text = processedText;
-                textComponent.FixFont(databaseOverride);
+                textComponent.FixFont(databaseOverride, originalText);
                 lastText = textComponent.text;
+
+                if (!alreadyShaped)
+                {
+                    lastRawText = currentText;
+                }
             }
         }
 

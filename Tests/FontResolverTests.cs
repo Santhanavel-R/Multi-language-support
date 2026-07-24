@@ -71,5 +71,19 @@ namespace MultiLanguageSupporter.Tests
             Object.DestroyImmediate(fallbackDatabase);
             Object.DestroyImmediate(latinFont);
         }
+
+        [Test]
+        public void FontResolver_DoesNotTreatFontTagsAsLatinCharacters()
+        {
+            var go = new GameObject("TaggedText");
+            var textComponent = go.AddComponent<TextMeshPro>();
+
+            textComponent.text = "<font=\"Sai-Sai SDF\">வணக்கம்</font>";
+            FontResolver.ResolveAndApply(textComponent, database);
+
+            Assert.AreEqual(tamilFont, textComponent.font);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }

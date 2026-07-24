@@ -21,6 +21,15 @@ namespace MultiLanguageSupporter.Tests
         }
 
         [Test]
+        public void ScriptShaper_DoesNotReshapeAlreadyShapedTamilText()
+        {
+            string input = "<font=\"Sai-Sai SDF\">வணக்கம்</font> Hello";
+            string output = ScriptShaper.Shape(input);
+
+            Assert.AreEqual(input, output);
+        }
+
+        [Test]
         public void DetectDominantScript_Hindi_ReturnsHindi()
         {
             Assert.AreEqual(ScriptType.Hindi, ScriptDetector.DetectDominantScript("नमस्ते"));
