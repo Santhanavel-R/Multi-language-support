@@ -213,6 +213,13 @@ namespace MultiLanguageSupporter.Editor
                     EditorUtility.SetDirty(mat);
                 }
 
+                // 3.5 Explicitly bind the texture to the material as a sub-asset reference
+                if (mat != null && tex != null)
+                {
+                    mat.SetTexture("_MainTex", tex);
+                    EditorUtility.SetDirty(mat);
+                }
+
                 // 4. Force Unity's serialization system to register the references on disk using SerializedObject
                 SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
                 
