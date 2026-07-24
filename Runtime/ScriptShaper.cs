@@ -20,17 +20,78 @@ namespace MultiLanguageSupporter
         {
             if (string.IsNullOrEmpty(input)) return input;
 
-            // Delegate to the precompiled TamilEncoder library to convert Unicode to legacy TSCII encoding
-            return TamilEncoder.TamilEncoding.ConvertFromUnicode(input, TamilEncoder.TamilFontEncoding.TSCII);
+            StringBuilder sb = new StringBuilder();
+            StringBuilder tamilGroup = new StringBuilder();
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+                if (c >= 0x0B80 && c <= 0x0BFF)
+                {
+                    tamilGroup.Append(c);
+                }
+                else
+                {
+                    if (tamilGroup.Length > 0)
+                    {
+                        sb.Append(TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII));
+                        tamilGroup.Clear();
+                    }
+                    sb.Append(c);
+                }
+            }
+
+            if (tamilGroup.Length > 0)
+            {
+                sb.Append(TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII));
+            }
+
+            return sb.ToString();
         }
 
         private static string ShapeDevanagari(string input)
         {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            bool hasDevanagari = false;
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+                if (c >= 0x0900 && c <= 0x097F)
+                {
+                    hasDevanagari = true;
+                    break;
+                }
+            }
+
+            if (!hasDevanagari)
+            {
+                return input;
+            }
+
             return UnicodeToKrutidev.Convert(input);
         }
 
         private static string ShapeBengali(string input)
         {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            bool hasBengali = false;
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+                if (c >= 0x0980 && c <= 0x09FF)
+                {
+                    hasBengali = true;
+                    break;
+                }
+            }
+
+            if (!hasBengali)
+            {
+                return input;
+            }
+
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < input.Length; i++)
             {

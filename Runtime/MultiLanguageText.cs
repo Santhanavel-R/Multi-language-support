@@ -71,7 +71,7 @@ namespace MultiLanguageSupporter
             if (textComponent != null)
             {
                 textComponent.text = textContent;
-                textComponent.FixFont(databaseOverride);
+                textComponent.FixFont(databaseOverride, textContent);
             }
         }
 
