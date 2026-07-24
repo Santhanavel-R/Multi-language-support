@@ -161,9 +161,10 @@ namespace MultiLanguageSupporter.Editor
                 );
 
                 // Ensure atlas texture is properly formatted
+                Texture2D tex = null;
                 if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
                 {
-                    Texture2D tex = fontAsset.atlasTextures[0];
+                    tex = fontAsset.atlasTextures[0];
                     if (tex != null)
                     {
                         if (tex.width == 0 || tex.height == 0 || tex.width != 1024 || tex.height != 1024)
