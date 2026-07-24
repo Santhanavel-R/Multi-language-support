@@ -78,13 +78,40 @@ namespace MultiLanguageSupporter.Editor
 
                 string assetPath = $"{PackagePath}/{RuntimePath}/Resources/Fonts/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
                 TMP_FontAsset existingAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+                
+                // Health check: check if the asset is already healthy
+                bool isValid = existingAsset != null &&
+                               existingAsset.atlasTextures != null &&
+                               existingAsset.atlasTextures.Length > 0 &&
+                               existingAsset.atlasTextures[0] != null &&
+                               existingAsset.atlasTextures[0].width == 1024 &&
+                               existingAsset.material != null;
+
+                if (isValid)
+                {
+                    Debug.Log($"[SmartFont] Healthy dynamic font asset already exists for {script} at {assetPath}, skipping generation.");
+                    generatedAssets[script] = existingAsset;
+                    // Force reimport to ensure the Unity Project window refreshes and shows the foldout arrow
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                    continue;
+                }
+
                 if (existingAsset != null)
                 {
                     AssetDatabase.DeleteAsset(assetPath);
                 }
 
                 Debug.Log($"[SmartFont] Creating new dynamic TMP Font Asset for {script} from {ttfName}...");
-                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(ttfFont);
+                TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(
+                    ttfFont,
+                    90, // samplingPointSize
+                    9,  // atlasPadding
+                    UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
+                    1024, // atlasWidth
+                    1024, // atlasHeight
+                    AtlasPopulationMode.Dynamic,
+                    true // enableMultiAtlasSupport
+                );
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
                 
                 // Attach atlas textures as sub-assets so they are saved to disk!
@@ -95,14 +122,14 @@ namespace MultiLanguageSupporter.Editor
                         Texture2D tex = fontAsset.atlasTextures[i];
                         if (tex != null)
                         {
-                            // Fix Unity 0x0 texture serialization crash by resizing
-                            if (tex.width == 0 || tex.height == 0)
+                            if (tex.width == 0 || tex.height == 0 || tex.width != 1024 || tex.height != 1024)
                             {
-                                tex.Resize(256, 256);
+                                tex.Resize(1024, 1024);
                                 tex.Apply(false);
                             }
                             tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                            AssetDatabase.AddObjectToAsset(tex, fontAsset);
+                            tex.hideFlags = HideFlags.None; // Ensure it shows in the hierarchy (foldout arrow)
+                            AssetDatabase.AddObjectToAsset(tex, assetPath); // Save using safe path signature to avoid native crash
                             EditorUtility.SetDirty(tex);
                         }
                     }
@@ -112,7 +139,8 @@ namespace MultiLanguageSupporter.Editor
                 if (fontAsset.material != null)
                 {
                     fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+                    fontAsset.material.hideFlags = HideFlags.None; // Ensure it shows in the hierarchy (foldout arrow)
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath); // Save using safe path signature to avoid native crash
                     EditorUtility.SetDirty(fontAsset.material);
                 }
                 
