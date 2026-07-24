@@ -183,25 +183,11 @@ namespace MultiLanguageSupporter.Editor
                     fontAsset.material.hideFlags = HideFlags.None;
                 }
 
-                // Create main asset container on disk (with references populated!)
+                // Create main asset container on disk. Because fontAsset references the texture and material,
+                // and their hideFlags are set to None, Unity's CreateAsset will automatically embed them
+                // as visible sub-assets in the same file without needing AddObjectToAsset.
+                // This avoids any native serialization double-bind crashes and keeps references 100% correct!
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
-
-                // Add sub-assets to the asset database container using the safe path-based signature
-                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
-                {
-                    Texture2D tex = fontAsset.atlasTextures[0];
-                    if (tex != null)
-                    {
-                        AssetDatabase.AddObjectToAsset(tex, assetPath);
-                        EditorUtility.SetDirty(tex);
-                    }
-                }
-
-                if (fontAsset.material != null)
-                {
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath);
-                    EditorUtility.SetDirty(fontAsset.material);
-                }
                 
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
