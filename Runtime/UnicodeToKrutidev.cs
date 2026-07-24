@@ -115,6 +115,12 @@ namespace MultiLanguageSupporter
                 int shiftIndex = positionOfF - 1;
                 while (shiftIndex > 2)
                 {
+                    if (modified[shiftIndex] == '+')
+                    {
+                        shiftIndex--;
+                        continue;
+                    }
+
                     char prevChar = modified[shiftIndex - 1];
                     // If the previous character is a half-consonant joiner (like halant or a half-character in Krutidev)
                     if (prevChar == 'D' || prevChar == 'P' || prevChar == '[' || prevChar == 'X' || prevChar == '?' ||
