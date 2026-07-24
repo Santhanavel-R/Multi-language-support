@@ -61,7 +61,7 @@ namespace MultiLanguageSupporter
             if (tamilGroup.Length > 0)
             {
                 string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                sb.Append("<font=\"Sai-Sai SDF\">\").Append(converted).Append("</font>");
+                sb.Append("<font=\"Sai-Sai SDF\">").Append(converted).Append("</font>");
             }
 
             return sb.ToString();
