@@ -150,7 +150,7 @@ namespace MultiLanguageSupporter
             if (hindi.Length > 0)
             {
                 string converted = UnicodeToKrutidev.Convert(hindi.ToString());
-                sb.Append("<font=\"Kruti Dev 010 SDF\">\").Append(converted).Append("</font>");
+                sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(converted).Append("</font>");
                 hindi.Clear();
             }
             if (latin.Length > 0)
@@ -167,17 +167,17 @@ namespace MultiLanguageSupporter
                 {
                     if (leading.Length > 0)
                     {
-                        sb.Append("<font=\"Kruti Dev 010 SDF\">\").Append(UnicodeToKrutidev.Convert(leading)).Append("</font>");
+                        sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(leading)).Append("</font>");
                     }
-                    sb.Append("<font=\"NotoSans-Regular SDF\">\").Append(cleanLatin).Append("</font>");
+                    sb.Append("<font=\"NotoSans-Regular SDF\">").Append(cleanLatin).Append("</font>");
                     if (trailing.Length > 0)
                     {
-                        sb.Append("<font=\"Kruti Dev 010 SDF\">\").Append(UnicodeToKrutidev.Convert(trailing)).Append("</font>");
+                        sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(trailing)).Append("</font>");
                     }
                 }
                 else
                 {
-                    sb.Append("<font=\"Kruti Dev 010 SDF\">\").Append(UnicodeToKrutidev.Convert(latStr)).Append("</font>");
+                    sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(latStr)).Append("</font>");
                 }
                 latin.Clear();
             }
