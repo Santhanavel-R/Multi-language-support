@@ -65,19 +65,20 @@ namespace MultiLanguageSupporter
         {
             if (string.IsNullOrEmpty(unicodeText)) return unicodeText;
 
-            string modified = unicodeText;
+            // Convert straight quotes to curly quotes before mapping so they map to correct Krutidev symbols instead of random letters
+            string modified = ConvertStraightQuotesToCurly(unicodeText);
 
-            // Specialty replacements before mapping
-            modified = modified.Replace("क़", "क़");
-            modified = modified.Replace("ख़‌", "ख़");
-            modified = modified.Replace("ग़", "ग़");
-            modified = modified.Replace("ज़", "ज़");
-            modified = modified.Replace("ड़", "ड़");
-            modified = modified.Replace("ढ़", "ढ़");
-            modified = modified.Replace("ऩ", "ऩ");
-            modified = modified.Replace("फ़", "फ़");
-            modified = modified.Replace("य़", "य़");
-            modified = modified.Replace("ऱ", "ऱ");
+            // Specialty replacements before mapping: normalize precomposed characters (like U+095C, U+095D) to composite sequences
+            modified = modified.Replace("\u0958", "क\u093C"); // क़
+            modified = modified.Replace("\u0959", "ख\u093C"); // ख़
+            modified = modified.Replace("\u095A", "ग\u093C"); // ग़
+            modified = modified.Replace("\u095B", "ज\u093C"); // ज़
+            modified = modified.Replace("\u095C", "ड\u093C"); // ड़
+            modified = modified.Replace("\u095D", "ढ\u093C"); // ढ़
+            modified = modified.Replace("\u095E", "फ\u093C"); // फ़
+            modified = modified.Replace("\u095F", "य\u093C"); // य़
+            modified = modified.Replace("\u0931", "र\u093C"); // ऱ
+            modified = modified.Replace("\u0929", "न\u093C"); // ऩ
             
             // Replace short-i matra
             modified = modified.Replace("ि", "f");
@@ -179,6 +180,49 @@ namespace MultiLanguageSupporter
             modified = modified.Trim();
 
             return modified;
+        }
+
+        private static string ConvertStraightQuotesToCurly(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            
+            StringBuilder sb = new StringBuilder();
+            bool insideSingle = false;
+            bool insideDouble = false;
+            
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c == '\'')
+                {
+                    if (insideSingle)
+                    {
+                        sb.Append('’'); // closing curly single
+                    }
+                    else
+                    {
+                        sb.Append('‘'); // opening curly single
+                    }
+                    insideSingle = !insideSingle;
+                }
+                else if (c == '"')
+                {
+                    if (insideDouble)
+                    {
+                        sb.Append('”'); // closing curly double
+                    }
+                    else
+                    {
+                        sb.Append('“'); // opening curly double
+                    }
+                    insideDouble = !insideDouble;
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
         }
     }
 }
