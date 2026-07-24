@@ -297,8 +297,21 @@ namespace MultiLanguageSupporter.Editor
         [MenuItem("Window/SmartFont/Clear Package Cache & Resolve")]
         public static void ClearCacheAndResolve()
         {
+            Debug.Log("[SmartFont] Deleting packages-lock.json to unlock git dependencies...");
+            try
+            {
+                string lockFilePath = Path.GetFullPath("Packages/packages-lock.json");
+                if (File.Exists(lockFilePath))
+                {
+                    File.Delete(lockFilePath);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[SmartFont] Note: Could not delete packages-lock.json: {ex.Message}");
+            }
+
             Debug.Log("[SmartFont] Clearing PackageCache for com.smartfont.universal...");
-            
             try
             {
                 string cachePath = Path.GetFullPath("Library/PackageCache");
