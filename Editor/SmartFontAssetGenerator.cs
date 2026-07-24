@@ -184,7 +184,7 @@ namespace MultiLanguageSupporter.Editor
                 }
 
                 // 1. Extract texture and material references from memory before writing
-                Texture2D tex = (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0) ? fontAsset.atlasTextures[0] : null;
+                tex = (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0) ? fontAsset.atlasTextures[0] : null;
                 Material mat = fontAsset.material;
 
                 // 2. Create the main asset container on disk
