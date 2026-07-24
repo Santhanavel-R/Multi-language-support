@@ -82,11 +82,30 @@ namespace MultiLanguageSupporter
             // Replace short-i matra
             modified = modified.Replace("ि", "f");
 
-            // Replace Unicode characters with Krutidev ASCII mapping
-            for (int idx = 0; idx < array_one.Length; idx++)
+            // Replace Unicode characters with Krutidev ASCII mapping using a single-pass loop to prevent multi-pass corruption
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < modified.Length; )
             {
-                modified = modified.Replace(array_one[idx], array_two[idx]);
+                bool matched = false;
+                for (int idx = 0; idx < array_one.Length; idx++)
+                {
+                    string target = array_one[idx];
+                    if (i + target.Length <= modified.Length && modified.Substring(i, target.Length) == target)
+                    {
+                        sb.Append(array_two[idx]);
+                        i += target.Length;
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched)
+                {
+                    sb.Append(modified[i]);
+                    i++;
+                }
             }
+            modified = sb.ToString();
 
             // Move "f" to the correct position (before the consonant or consonant cluster)
             modified = "  " + modified + "  ";
