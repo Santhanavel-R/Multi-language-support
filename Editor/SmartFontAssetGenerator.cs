@@ -113,11 +113,10 @@ namespace MultiLanguageSupporter.Editor
                     true // enableMultiAtlasSupport
                 );
 
-                // Extract and prepare original sub-assets
-                Texture2D tex = null;
+                // Ensure atlas texture is properly formatted
                 if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
                 {
-                    tex = fontAsset.atlasTextures[0];
+                    Texture2D tex = fontAsset.atlasTextures[0];
                     if (tex != null)
                     {
                         if (tex.width == 0 || tex.height == 0 || tex.width != 1024 || tex.height != 1024)
@@ -128,33 +127,33 @@ namespace MultiLanguageSupporter.Editor
                         tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
                         tex.hideFlags = HideFlags.None;
                     }
-                    fontAsset.atlasTextures[0] = null; // Detach to prevent nested serialization during CreateAsset
                 }
 
-                Material mat = fontAsset.material;
-                if (mat != null)
+                // Ensure default material is properly formatted
+                if (fontAsset.material != null)
                 {
-                    mat.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    mat.hideFlags = HideFlags.None;
-                    fontAsset.material = null; // Detach to prevent nested serialization during CreateAsset
+                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    fontAsset.material.hideFlags = HideFlags.None;
                 }
 
-                // Create main asset container on disk
+                // Create main asset container on disk (with references populated!)
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
 
-                // Add sub-assets using safe path signature (never crashes!)
-                if (tex != null)
+                // Add sub-assets to the asset database container using the safe path-based signature
+                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
                 {
-                    AssetDatabase.AddObjectToAsset(tex, assetPath);
-                    EditorUtility.SetDirty(tex);
-                    fontAsset.atlasTextures[0] = tex; // Restore and mark dirty
+                    Texture2D tex = fontAsset.atlasTextures[0];
+                    if (tex != null)
+                    {
+                        AssetDatabase.AddObjectToAsset(tex, assetPath);
+                        EditorUtility.SetDirty(tex);
+                    }
                 }
 
-                if (mat != null)
+                if (fontAsset.material != null)
                 {
-                    AssetDatabase.AddObjectToAsset(mat, assetPath);
-                    EditorUtility.SetDirty(mat);
-                    fontAsset.material = mat; // Restore and mark dirty
+                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath);
+                    EditorUtility.SetDirty(fontAsset.material);
                 }
                 
                 EditorUtility.SetDirty(fontAsset);
