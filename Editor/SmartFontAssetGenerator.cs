@@ -183,11 +183,48 @@ namespace MultiLanguageSupporter.Editor
                     fontAsset.material.hideFlags = HideFlags.None;
                 }
 
-                // Create main asset container on disk. Because fontAsset references the texture and material,
-                // and their hideFlags are set to None, Unity's CreateAsset will automatically embed them
-                // as visible sub-assets in the same file without needing AddObjectToAsset.
-                // This avoids any native serialization double-bind crashes and keeps references 100% correct!
+                // 1. Extract texture and material references from memory before writing
+                Texture2D tex = (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0) ? fontAsset.atlasTextures[0] : null;
+                Material mat = fontAsset.material;
+
+                // 2. Create the main asset container on disk
                 AssetDatabase.CreateAsset(fontAsset, assetPath);
+
+                // 3. Add the texture and material as sub-assets using the safe path-based signature (never crashes!)
+                if (tex != null)
+                {
+                    AssetDatabase.AddObjectToAsset(tex, assetPath);
+                    EditorUtility.SetDirty(tex);
+                }
+
+                if (mat != null)
+                {
+                    AssetDatabase.AddObjectToAsset(mat, assetPath);
+                    EditorUtility.SetDirty(mat);
+                }
+
+                // 4. Force Unity's serialization system to register the references on disk using SerializedObject
+                SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
+                
+                SerializedProperty atlasTexturesProp = serializedFontAsset.FindProperty("m_AtlasTextures");
+                if (atlasTexturesProp != null && tex != null)
+                {
+                    atlasTexturesProp.ClearArray();
+                    atlasTexturesProp.InsertArrayElementAtIndex(0);
+                    atlasTexturesProp.GetArrayElementAtIndex(0).objectReferenceValue = tex;
+                }
+
+                SerializedProperty materialProp = serializedFontAsset.FindProperty("m_Material");
+                if (materialProp == null)
+                {
+                    materialProp = serializedFontAsset.FindProperty("material");
+                }
+                if (materialProp != null && mat != null)
+                {
+                    materialProp.objectReferenceValue = mat;
+                }
+
+                serializedFontAsset.ApplyModifiedProperties();
                 
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
