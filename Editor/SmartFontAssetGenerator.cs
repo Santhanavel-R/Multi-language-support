@@ -18,13 +18,39 @@ namespace MultiLanguageSupporter.Editor
             // EditorApplication.delayCall += AutoGenerateIfNeeded;
         }
 
+        private static bool IsPackageMutable()
+        {
+            try
+            {
+                string testPath = $"{PackagePath}/{RuntimePath}/Resources/write_test.txt";
+                string physicalPath = Path.GetFullPath(testPath);
+                string dir = Path.GetDirectoryName(physicalPath);
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                File.WriteAllText(physicalPath, "test");
+                File.Delete(physicalPath);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static void AutoGenerateIfNeeded()
         {
             string dbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
             FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
             if (database == null || database.IsEmpty)
             {
-                Debug.Log("[SmartFont] Default database is missing or empty. Please run Window > SmartFont > Generate Package Assets manually.");
+                string localDbPath = "Assets/SmartFont/Resources/SmartFontDefaultDatabase.asset";
+                FontDatabase localDb = AssetDatabase.LoadAssetAtPath<FontDatabase>(localDbPath);
+                if (localDb == null || localDb.IsEmpty)
+                {
+                    Debug.Log("[SmartFont] Default database is missing or empty. Please run Window > SmartFont > Generate Package Assets manually.");
+                }
             }
         }
         
@@ -33,14 +59,35 @@ namespace MultiLanguageSupporter.Editor
         {
             Debug.Log("[SmartFont] Starting package asset generation...");
 
-            // Create directories using AssetDatabase
-            if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources"))
+            bool usePackage = IsPackageMutable();
+            string targetFolder;
+            string targetDbPath;
+
+            if (usePackage)
             {
-                AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}", "Resources");
+                targetFolder = $"{PackagePath}/{RuntimePath}/Resources/Fonts";
+                targetDbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
+                
+                if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources"))
+                {
+                    AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}", "Resources");
+                }
+                if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources/Fonts"))
+                {
+                    AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}/Resources", "Fonts");
+                }
+                Debug.Log("[SmartFont] Package is mutable. Generating assets directly inside the package folder.");
             }
-            if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources/Fonts"))
+            else
             {
-                AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}/Resources", "Fonts");
+                targetFolder = "Assets/SmartFont/Resources/Fonts";
+                targetDbPath = "Assets/SmartFont/Resources/SmartFontDefaultDatabase.asset";
+
+                if (!Directory.Exists(Path.GetFullPath("Assets/SmartFont/Resources/Fonts")))
+                {
+                    Directory.CreateDirectory(Path.GetFullPath("Assets/SmartFont/Resources/Fonts"));
+                }
+                Debug.Log("[SmartFont] Package is read-only (immutable). Generating assets inside the project's 'Assets/SmartFont' folder instead.");
             }
 
             AssetDatabase.Refresh();
@@ -76,7 +123,7 @@ namespace MultiLanguageSupporter.Editor
                     continue;
                 }
 
-                string assetPath = $"{PackagePath}/{RuntimePath}/Resources/Fonts/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
+                string assetPath = $"{targetFolder}/{Path.GetFileNameWithoutExtension(ttfName)} SDF.asset";
                 TMP_FontAsset existingAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
                 
                 // Health check: check if the asset is already healthy
@@ -190,7 +237,7 @@ namespace MultiLanguageSupporter.Editor
             }
 
             // Create or update FontDatabase
-            string dbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
+            string dbPath = targetDbPath;
             FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
 
             if (database == null)
