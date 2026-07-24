@@ -90,7 +90,7 @@ namespace MultiLanguageSupporter.Tests
 
             multiLanguageText.Text = "வணக்கம்";
 
-            Assert.IsTrue(textComponent.text.Contains("<font=\"SaiSaiSDF\">"));
+            Assert.IsTrue(textComponent.text.Contains("<font=\"Sai-Sai SDF\">"));
 
             Object.DestroyImmediate(go);
         }
