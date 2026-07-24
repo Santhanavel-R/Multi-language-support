@@ -112,36 +112,49 @@ namespace MultiLanguageSupporter.Editor
                     AtlasPopulationMode.Dynamic,
                     true // enableMultiAtlasSupport
                 );
-                AssetDatabase.CreateAsset(fontAsset, assetPath);
-                
-                // Attach atlas textures as sub-assets so they are saved to disk!
-                if (fontAsset.atlasTextures != null)
+
+                // Extract and prepare original sub-assets
+                Texture2D tex = null;
+                if (fontAsset.atlasTextures != null && fontAsset.atlasTextures.Length > 0)
                 {
-                    for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+                    tex = fontAsset.atlasTextures[0];
+                    if (tex != null)
                     {
-                        Texture2D tex = fontAsset.atlasTextures[i];
-                        if (tex != null)
+                        if (tex.width == 0 || tex.height == 0 || tex.width != 1024 || tex.height != 1024)
                         {
-                            if (tex.width == 0 || tex.height == 0 || tex.width != 1024 || tex.height != 1024)
-                            {
-                                tex.Resize(1024, 1024);
-                                tex.Apply(false);
-                            }
-                            tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas {i}";
-                            tex.hideFlags = HideFlags.None; // Ensure it shows in the hierarchy (foldout arrow)
-                            AssetDatabase.AddObjectToAsset(tex, assetPath); // Save using safe path signature to avoid native crash
-                            EditorUtility.SetDirty(tex);
+                            tex.Resize(1024, 1024);
+                            tex.Apply(false);
                         }
+                        tex.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Atlas 0";
+                        tex.hideFlags = HideFlags.None;
                     }
+                    fontAsset.atlasTextures[0] = null; // Detach to prevent nested serialization during CreateAsset
                 }
 
-                // Attach default material as sub-asset so it is saved to disk!
-                if (fontAsset.material != null)
+                Material mat = fontAsset.material;
+                if (mat != null)
                 {
-                    fontAsset.material.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
-                    fontAsset.material.hideFlags = HideFlags.None; // Ensure it shows in the hierarchy (foldout arrow)
-                    AssetDatabase.AddObjectToAsset(fontAsset.material, assetPath); // Save using safe path signature to avoid native crash
-                    EditorUtility.SetDirty(fontAsset.material);
+                    mat.name = $"{Path.GetFileNameWithoutExtension(ttfName)} Material";
+                    mat.hideFlags = HideFlags.None;
+                    fontAsset.material = null; // Detach to prevent nested serialization during CreateAsset
+                }
+
+                // Create main asset container on disk
+                AssetDatabase.CreateAsset(fontAsset, assetPath);
+
+                // Add sub-assets using safe path signature (never crashes!)
+                if (tex != null)
+                {
+                    AssetDatabase.AddObjectToAsset(tex, assetPath);
+                    EditorUtility.SetDirty(tex);
+                    fontAsset.atlasTextures[0] = tex; // Restore and mark dirty
+                }
+
+                if (mat != null)
+                {
+                    AssetDatabase.AddObjectToAsset(mat, assetPath);
+                    EditorUtility.SetDirty(mat);
+                    fontAsset.material = mat; // Restore and mark dirty
                 }
                 
                 EditorUtility.SetDirty(fontAsset);
