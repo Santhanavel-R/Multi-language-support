@@ -257,18 +257,31 @@ namespace MultiLanguageSupporter.Editor
                 SerializedProperty creationSettingsProp = serializedFontAsset.FindProperty("m_CreationSettings");
                 if (creationSettingsProp != null)
                 {
-                    creationSettingsProp.FindPropertyRelative("sourceFontFileName")?.stringValue = ttfFont.name;
+                    var sourceFontFileNameProp = creationSettingsProp.FindPropertyRelative("sourceFontFileName");
+                    if (sourceFontFileNameProp != null) sourceFontFileNameProp.stringValue = ttfFont.name;
+
                     string guid;
                     long localId;
                     if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(ttfFont, out guid, out localId))
                     {
-                        creationSettingsProp.FindPropertyRelative("sourceFontFileGUID")?.stringValue = guid;
+                        var sourceFontFileGUIDProp = creationSettingsProp.FindPropertyRelative("sourceFontFileGUID");
+                        if (sourceFontFileGUIDProp != null) sourceFontFileGUIDProp.stringValue = guid;
                     }
-                    creationSettingsProp.FindPropertyRelative("pointSize")?.intValue = 90;
-                    creationSettingsProp.FindPropertyRelative("padding")?.intValue = 9;
-                    creationSettingsProp.FindPropertyRelative("atlasWidth")?.intValue = 1024;
-                    creationSettingsProp.FindPropertyRelative("atlasHeight")?.intValue = 1024;
-                    creationSettingsProp.FindPropertyRelative("renderMode")?.intValue = (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA;
+                    
+                    var pointSizeProp = creationSettingsProp.FindPropertyRelative("pointSize");
+                    if (pointSizeProp != null) pointSizeProp.intValue = 90;
+
+                    var paddingProp = creationSettingsProp.FindPropertyRelative("padding");
+                    if (paddingProp != null) paddingProp.intValue = 9;
+
+                    var atlasWidthProp = creationSettingsProp.FindPropertyRelative("atlasWidth");
+                    if (atlasWidthProp != null) atlasWidthProp.intValue = 1024;
+
+                    var atlasHeightProp = creationSettingsProp.FindPropertyRelative("atlasHeight");
+                    if (atlasHeightProp != null) atlasHeightProp.intValue = 1024;
+
+                    var renderModeProp = creationSettingsProp.FindPropertyRelative("renderMode");
+                    if (renderModeProp != null) renderModeProp.intValue = (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA;
                 }
 
                 // Clear dynamic data on build to keep the build sizes optimized and clean in git
