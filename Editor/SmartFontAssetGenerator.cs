@@ -142,6 +142,7 @@ namespace MultiLanguageSupporter.Editor
                 
                 // Health check: check if the asset is already healthy
                 bool isValid = existingAsset != null &&
+                               existingAsset.sourceFontFile != null &&
                                existingAsset.atlasTextures != null &&
                                existingAsset.atlasTextures.Length > 0 &&
                                existingAsset.atlasTextures[0] != null &&
@@ -252,8 +253,36 @@ namespace MultiLanguageSupporter.Editor
                     materialProp.objectReferenceValue = mat;
                 }
 
+                // Serialize creation settings
+                SerializedProperty creationSettingsProp = serializedFontAsset.FindProperty("m_CreationSettings");
+                if (creationSettingsProp != null)
+                {
+                    creationSettingsProp.FindPropertyRelative("sourceFontFileName")?.stringValue = ttfFont.name;
+                    string guid;
+                    long localId;
+                    if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(ttfFont, out guid, out localId))
+                    {
+                        creationSettingsProp.FindPropertyRelative("sourceFontFileGUID")?.stringValue = guid;
+                    }
+                    creationSettingsProp.FindPropertyRelative("pointSize")?.intValue = 90;
+                    creationSettingsProp.FindPropertyRelative("padding")?.intValue = 9;
+                    creationSettingsProp.FindPropertyRelative("atlasWidth")?.intValue = 1024;
+                    creationSettingsProp.FindPropertyRelative("atlasHeight")?.intValue = 1024;
+                    creationSettingsProp.FindPropertyRelative("renderMode")?.intValue = (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA;
+                }
+
+                // Clear dynamic data on build to keep the build sizes optimized and clean in git
+                SerializedProperty clearDynamicDataProp = serializedFontAsset.FindProperty("m_ClearDynamicDataOnBuild");
+                if (clearDynamicDataProp != null)
+                {
+                    clearDynamicDataProp.boolValue = true;
+                }
+
                 serializedFontAsset.ApplyModifiedProperties();
                 
+                // Call internal initialization methods to ensure the asset is fully loaded and lookup tables are populated
+                InitializeFontAsset(fontAsset);
+
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); // Refresh UI foldout arrow
@@ -356,6 +385,35 @@ namespace MultiLanguageSupporter.Editor
             Debug.Log("[SmartFont] Requesting Unity Package Manager to resolve dependencies...");
             UnityEditor.PackageManager.Client.Resolve();
             Debug.Log("[SmartFont] Resolve request sent. Unity will now fetch the latest commit of the package!");
+        }
+
+        private static void InitializeFontAsset(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null) return;
+            
+            // Invoke internal ReadFontAssetDefinition method
+            var readMethod = typeof(TMP_FontAsset).GetMethod("ReadFontAssetDefinition", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+            if (readMethod != null)
+            {
+                try { readMethod.Invoke(fontAsset, null); } catch (System.Exception e) { Debug.LogWarning($"[SmartFont] ReadFontAssetDefinition failed: {e.Message}"); }
+            }
+            
+            // Invoke internal InitializeLookupTables method
+            var initLookupMethod = typeof(TMP_FontAsset).GetMethod("InitializeLookupTables", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+            if (initLookupMethod != null)
+            {
+                try { initLookupMethod.Invoke(fontAsset, null); } catch (System.Exception e) { Debug.LogWarning($"[SmartFont] InitializeLookupTables failed: {e.Message}"); }
+            }
+
+            // Clean cached dynamic data to prevent bloat
+            try
+            {
+                fontAsset.ClearFontAssetData(false);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[SmartFont] ClearFontAssetData failed: {e.Message}");
+            }
         }
     }
 }
