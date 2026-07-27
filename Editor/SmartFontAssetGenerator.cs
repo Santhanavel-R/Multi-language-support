@@ -296,6 +296,16 @@ namespace MultiLanguageSupporter.Editor
                 // Call internal initialization methods to ensure the asset is fully loaded and lookup tables are populated
                 InitializeFontAsset(fontAsset);
 
+                // Populate the font asset with the script's characters so glyph and character tables are filled
+                try
+                {
+                    PopulateFontAssetCharacters(fontAsset, ttfFont, script);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[SmartFont] PopulateFontAssetCharacters failed for {assetName}: {e.Message}");
+                }
+
                 EditorUtility.SetDirty(fontAsset);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); // Refresh UI foldout arrow
@@ -418,14 +428,55 @@ namespace MultiLanguageSupporter.Editor
                 try { initLookupMethod.Invoke(fontAsset, null); } catch (System.Exception e) { Debug.LogWarning($"[SmartFont] InitializeLookupTables failed: {e.Message}"); }
             }
 
-            // Clean cached dynamic data to prevent bloat
-            try
+            // NOTE: Do NOT clear font asset data here. Clearing will remove populated
+            // glyph and character tables which are required for correct rendering of
+            // complex scripts (Indic, Thai, etc.). Populating characters is handled
+            // after asset creation.
+        }
+
+        private static void PopulateFontAssetCharacters(TMP_FontAsset fontAsset, Font sourceFont, ScriptType script)
+        {
+            if (fontAsset == null || sourceFont == null) return;
+
+            (int start, int end) range = (0, 0);
+            switch (script)
             {
-                fontAsset.ClearFontAssetData(false);
+                case ScriptType.Tamil: range = (0x0B80, 0x0BFF); break;
+                case ScriptType.Hindi: range = (0x0900, 0x097F); break;
+                case ScriptType.Bengali: range = (0x0980, 0x09FF); break;
+                case ScriptType.Kannada: range = (0x0C80, 0x0CFF); break;
+                case ScriptType.Malayalam: range = (0x0D00, 0x0D7F); break;
+                case ScriptType.Thai: range = (0x0E00, 0x0E7F); break;
+                case ScriptType.Chinese: range = (0x4E00, 0x9FFF); break;
+                case ScriptType.Korean: range = (0xAC00, 0xD7AF); break;
+                default: range = (0x0020, 0x007E); break; // Basic Latin
             }
-            catch (System.Exception e)
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            for (int code = range.start; code <= range.end; code++)
             {
-                Debug.LogWarning($"[SmartFont] ClearFontAssetData failed: {e.Message}");
+                // Only add BMP characters (most target scripts are in BMP)
+                if (code > 0xFFFF) continue;
+                char ch = (char)code;
+                try
+                {
+                    if (sourceFont.HasCharacter(ch))
+                    {
+                        sb.Append(ch);
+                    }
+                }
+                catch { }
+                // Keep batches reasonably sized
+                if (sb.Length > 512)
+                {
+                    fontAsset.TryAddCharacters(sb.ToString());
+                    sb.Clear();
+                }
+            }
+
+            if (sb.Length > 0)
+            {
+                fontAsset.TryAddCharacters(sb.ToString());
             }
         }
 
@@ -478,6 +529,60 @@ namespace MultiLanguageSupporter.Editor
                 double pct = (double)supported / total * 100.0;
                 Debug.Log($"[SmartFont] {script} Coverage: {pct:F1}% ({supported}/{total} characters supported by source font '{fontAsset.sourceFontFile.name}')");
             }
+        }
+
+        [MenuItem("Window/SmartFont/Repopulate Existing Font Assets")]
+        public static void RepopulateExistingAssets()
+        {
+            Debug.Log("[SmartFont] Repopulating existing SmartFont TMP assets from FontDatabase...");
+
+            // Try load default database from Resources
+            FontDatabase database = Resources.Load<FontDatabase>("SmartFontDefaultDatabase");
+            if (database == null)
+            {
+                database = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
+            }
+
+            if (database == null || database.IsEmpty)
+            {
+                Debug.LogWarning("[SmartFont] No FontDatabase found in Resources. Cannot repopulate assets.");
+                return;
+            }
+
+            int processed = 0;
+            // For each mapping in the database, populate the mapped TMP_FontAsset
+            foreach (ScriptType script in Enum.GetValues(typeof(ScriptType)))
+            {
+                TMP_FontAsset fontAsset = database.GetFontForScript(script);
+                if (fontAsset == null) continue;
+
+                Font source = fontAsset.sourceFontFile;
+                if (source == null)
+                {
+                    Debug.LogWarning($"[SmartFont] Font asset '{fontAsset.name}' for script {script} has no source font file. Skipping.");
+                    continue;
+                }
+
+                try
+                {
+                    PopulateFontAssetCharacters(fontAsset, source, script);
+                    EditorUtility.SetDirty(fontAsset);
+                    string path = AssetDatabase.GetAssetPath(fontAsset);
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        AssetDatabase.SaveAssets();
+                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                    }
+                    processed++;
+                    Debug.Log($"[SmartFont] Repopulated '{fontAsset.name}' for script {script}.");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[SmartFont] Failed to repopulate '{fontAsset.name}': {e.Message}");
+                }
+            }
+
+            Debug.Log($"[SmartFont] Repopulation complete. Processed {processed} font assets.");
         }
 
         [MenuItem("Window/SmartFont/Toggle Verbose Diagnostics")]
