@@ -21,8 +21,8 @@ namespace MultiLanguageSupporter
                 database = FontResolver.GetDefaultDatabase();
             }
 
-            string tamilFontName = "SaiSaiSDF";
-            string hindiFontName = "KrutiDev010SDF";
+            string tamilFontName = "NotoSansTamilRegularSDF";
+            string hindiFontName = "NotoSansDevanagariRegularSDF";
             string latinFontName = "NotoSansRegularSDF";
 
             if (database != null)

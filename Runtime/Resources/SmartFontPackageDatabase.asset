@@ -16,9 +16,9 @@ MonoBehaviour:
   - Script: 1
     FontAsset: {fileID: 11400000, guid: 4e2eb38bd0e7416689c457aec7651fc8, type: 2}
   - Script: 2
-    FontAsset: {fileID: 11400000, guid: c8c0646359821b24bab16c6d7145a22b, type: 2}
+    FontAsset: {fileID: 11400000, guid: 20df26d9b05d4a5fabac123874e8b472, type: 2}
   - Script: 3
-    FontAsset: {fileID: 11400000, guid: 6498ee89fcf94b129efae0188f360fd6, type: 2}
+    FontAsset: {fileID: 11400000, guid: 1091217b671549d6b527e1c5707569c7, type: 2}
   - Script: 4
     FontAsset: {fileID: 11400000, guid: 5e58ee5472424ad2ab3cf446d2315bdd, type: 2}
   - Script: 5
