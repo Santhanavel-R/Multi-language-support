@@ -177,6 +177,7 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
+                textComponent.richText = true;
                 string currentText = textComponent.text;
                 bool alreadyShaped = IsAlreadyShaped(currentText);
                 string originalText = alreadyShaped ? (!string.IsNullOrEmpty(lastRawText) ? lastRawText : GetVisibleTextOutsideFontBlocks(currentText)) : currentText;

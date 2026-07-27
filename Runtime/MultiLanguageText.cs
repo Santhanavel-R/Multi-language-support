@@ -101,6 +101,7 @@ namespace MultiLanguageSupporter
 
             if (textComponent != null)
             {
+                textComponent.richText = true;
                 string processedText = textContent;
                 if (textComponent.textPreprocessor != null && !IsAlreadyShaped(textContent))
                 {

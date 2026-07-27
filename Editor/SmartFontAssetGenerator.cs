@@ -137,7 +137,10 @@ namespace MultiLanguageSupporter.Editor
                     continue;
                 }
 
-                string assetName = $"{Path.GetFileNameWithoutExtension(ttfName)} SDF";
+                string cleanName = Path.GetFileNameWithoutExtension(ttfName)
+                    .Replace(" ", "")
+                    .Replace("-", "");
+                string assetName = $"{cleanName}SDF";
                 string assetPath = $"{targetFolder}/{assetName}.asset";
                 TMP_FontAsset existingAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
                 
@@ -187,7 +190,7 @@ namespace MultiLanguageSupporter.Editor
                             tex.Resize(1024, 1024);
                             tex.Apply(false);
                         }
-                        tex.name = $"{assetName} Atlas 0";
+                        tex.name = $"{assetName}Atlas0";
                         tex.hideFlags = HideFlags.None;
                     }
                 }
@@ -195,7 +198,7 @@ namespace MultiLanguageSupporter.Editor
                 // Ensure default material is properly formatted
                 if (fontAsset.material != null)
                 {
-                    fontAsset.material.name = $"{assetName} Material";
+                    fontAsset.material.name = $"{assetName}Material";
                     fontAsset.material.hideFlags = HideFlags.None;
                 }
 
