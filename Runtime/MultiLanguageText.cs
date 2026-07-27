@@ -114,7 +114,7 @@ namespace MultiLanguageSupporter
 
         public string PreprocessText(string text)
         {
-            string shaped = ScriptShaper.Shape(text);
+            string shaped = ScriptShaper.Shape(text, databaseOverride);
 #if UNITY_EDITOR
             if (Debug.isDebugBuild)
             {

@@ -6,17 +6,43 @@ namespace MultiLanguageSupporter
     {
         public static string Shape(string input)
         {
+            return Shape(input, null);
+        }
+
+        public static string Shape(string input, FontDatabase database)
+        {
             if (string.IsNullOrEmpty(input)) return input;
 
+            if (database == null)
+            {
+                database = FontResolver.GetDefaultDatabase();
+            }
+
+            string tamilFontName = "Sai-Sai SDF";
+            string hindiFontName = "Kruti Dev 010 SDF";
+            string latinFontName = "NotoSans-Regular SDF";
+
+            if (database != null)
+            {
+                var tamilFont = database.GetFontForScript(ScriptType.Tamil);
+                if (tamilFont != null) tamilFontName = tamilFont.name;
+
+                var hindiFont = database.GetFontForScript(ScriptType.Hindi);
+                if (hindiFont != null) hindiFontName = hindiFont.name;
+
+                var latinFont = database.GetFontForScript(ScriptType.Latin);
+                if (latinFont != null) latinFontName = latinFont.name;
+            }
+
             // Shape languages that need left-vowel reordering
-            input = ShapeTamil(input);
-            input = ShapeDevanagari(input);
+            input = ShapeTamil(input, tamilFontName);
+            input = ShapeDevanagari(input, hindiFontName, latinFontName);
             input = ShapeBengali(input);
 
             return input;
         }
 
-        private static string ShapeTamil(string input)
+        private static string ShapeTamil(string input, string tamilFontName)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
@@ -46,6 +72,12 @@ namespace MultiLanguageSupporter
 
                 if (TryReadTag(input, i, out string tag, out int tagEndIndex))
                 {
+                    if (tamilGroup.Length > 0)
+                    {
+                        string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
+                        sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
+                        tamilGroup.Clear();
+                    }
                     sb.Append(tag);
                     string lowerTag = tag.ToLowerInvariant();
                     if (lowerTag.StartsWith("<font")) insideFontBlock = true;
@@ -69,7 +101,7 @@ namespace MultiLanguageSupporter
                     if (tamilGroup.Length > 0)
                     {
                         string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                        sb.Append("<font=\"Sai-Sai SDF\">").Append(converted).Append("</font>");
+                        sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
                         tamilGroup.Clear();
                     }
                     sb.Append(c);
@@ -79,13 +111,13 @@ namespace MultiLanguageSupporter
             if (tamilGroup.Length > 0)
             {
                 string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                sb.Append("<font=\"Sai-Sai SDF\">").Append(converted).Append("</font>");
+                sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
             }
 
             return sb.ToString();
         }
 
-        private static string ShapeDevanagari(string input)
+        private static string ShapeDevanagari(string input, string hindiFontName, string latinFontName)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
@@ -116,6 +148,7 @@ namespace MultiLanguageSupporter
 
                 if (TryReadTag(input, i, out string tag, out int tagEndIndex))
                 {
+                    FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
                     sb.Append(tag);
                     string lowerTag = tag.ToLowerInvariant();
                     if (lowerTag.StartsWith("<font")) insideFontBlock = true;
@@ -136,7 +169,7 @@ namespace MultiLanguageSupporter
                 {
                     if (currentHindi.Length > 0)
                     {
-                        FlushDevAndLatin(sb, currentHindi, currentLatin);
+                        FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
                     }
                     currentLatin.Append(c);
                 }
@@ -150,23 +183,23 @@ namespace MultiLanguageSupporter
                     {
                         if (currentLatin.Length > 0)
                         {
-                            FlushDevAndLatin(sb, currentHindi, currentLatin);
+                            FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
                         }
                         currentHindi.Append(c);
                     }
                 }
             }
 
-            FlushDevAndLatin(sb, currentHindi, currentLatin);
+            FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
             return sb.ToString();
         }
 
-        private static void FlushDevAndLatin(StringBuilder sb, StringBuilder hindi, StringBuilder latin)
+        private static void FlushDevAndLatin(StringBuilder sb, StringBuilder hindi, StringBuilder latin, string hindiFontName, string latinFontName)
         {
             if (hindi.Length > 0)
             {
                 string converted = UnicodeToKrutidev.Convert(hindi.ToString());
-                sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(converted).Append("</font>");
+                sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(converted).Append("</font>");
                 hindi.Clear();
             }
             if (latin.Length > 0)
@@ -183,17 +216,17 @@ namespace MultiLanguageSupporter
                 {
                     if (leading.Length > 0)
                     {
-                        sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(leading)).Append("</font>");
+                        sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(leading)).Append("</font>");
                     }
-                    sb.Append("<font=\"NotoSans-Regular SDF\">").Append(cleanLatin).Append("</font>");
+                    sb.Append("<font=\"").Append(latinFontName).Append("\">").Append(cleanLatin).Append("</font>");
                     if (trailing.Length > 0)
                     {
-                        sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(trailing)).Append("</font>");
+                        sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(trailing)).Append("</font>");
                     }
                 }
                 else
                 {
-                    sb.Append("<font=\"Kruti Dev 010 SDF\">").Append(UnicodeToKrutidev.Convert(latStr)).Append("</font>");
+                    sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(latStr)).Append("</font>");
                 }
                 latin.Clear();
             }
