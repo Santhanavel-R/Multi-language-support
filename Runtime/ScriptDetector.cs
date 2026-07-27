@@ -25,6 +25,11 @@ namespace MultiLanguageSupporter
                 return ScriptType.Latin;
             }
 
+            if (text.Contains("<font") || text.Contains("<FONT"))
+            {
+                return DetectDominantScriptForShapedText(text);
+            }
+
             var counts = new Dictionary<ScriptType, int>();
 
             counts[ScriptType.Latin] = 0;
@@ -183,6 +188,67 @@ namespace MultiLanguageSupporter
                 return ScriptType.Latin;
 
             return ScriptType.Unknown;
+        }
+
+        private static ScriptType DetectDominantScriptForShapedText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return ScriptType.Latin;
+
+            int tamilTags = 0;
+            int hindiTags = 0;
+            bool hasLatinOutsideTags = false;
+            bool insideFontBlock = false;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c == '<')
+                {
+                    int closeIdx = text.IndexOf('>', i);
+                    if (closeIdx != -1)
+                    {
+                        string tag = text.Substring(i, closeIdx - i + 1).ToLowerInvariant();
+                        if (tag.StartsWith("<font"))
+                        {
+                            insideFontBlock = true;
+                            if (tag.Contains("sai-sai") || tag.Contains("saisai"))
+                            {
+                                tamilTags++;
+                            }
+                            else if (tag.Contains("kruti") || tag.Contains("krutidev"))
+                            {
+                                hindiTags++;
+                            }
+                        }
+                        else if (tag.StartsWith("</font"))
+                        {
+                            insideFontBlock = false;
+                        }
+                        i = closeIdx;
+                        continue;
+                    }
+                }
+
+                if (!insideFontBlock && GetCharScriptType(c) == ScriptType.Latin)
+                {
+                    hasLatinOutsideTags = true;
+                }
+            }
+
+            if (hasLatinOutsideTags)
+            {
+                return ScriptType.Latin;
+            }
+
+            if (tamilTags > 0 && hindiTags > 0)
+            {
+                return ScriptType.Latin;
+            }
+
+            if (tamilTags > 0) return ScriptType.Tamil;
+            if (hindiTags > 0) return ScriptType.Hindi;
+
+            return ScriptType.Latin;
         }
     }
 }

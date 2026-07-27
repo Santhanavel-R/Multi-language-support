@@ -17,8 +17,13 @@ namespace MultiLanguageSupporter
         {
             if (defaultDatabase == null)
             {
-                // Try loading from Resources
+                // Try loading from Resources (project generated)
                 defaultDatabase = Resources.Load<FontDatabase>("SmartFontDefaultDatabase");
+                if (defaultDatabase == null)
+                {
+                    // Fall back to package pre-built
+                    defaultDatabase = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
+                }
             }
             return defaultDatabase;
         }

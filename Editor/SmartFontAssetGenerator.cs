@@ -54,6 +54,11 @@ namespace MultiLanguageSupporter.Editor
             FontDatabase database = AssetDatabase.LoadAssetAtPath<FontDatabase>(dbPath);
             if (database == null || database.IsEmpty)
             {
+                string pkgDbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontPackageDatabase.asset";
+                database = AssetDatabase.LoadAssetAtPath<FontDatabase>(pkgDbPath);
+            }
+            if (database == null || database.IsEmpty)
+            {
                 string localDbPath = "Assets/SmartFont/Resources/SmartFontDefaultDatabase.asset";
                 FontDatabase localDb = AssetDatabase.LoadAssetAtPath<FontDatabase>(localDbPath);
                 if (localDb == null || localDb.IsEmpty)
@@ -132,11 +137,8 @@ namespace MultiLanguageSupporter.Editor
                     continue;
                 }
 
-                string cleanName = Path.GetFileNameWithoutExtension(ttfName)
-                    .Replace(" ", "")
-                    .Replace("-", "");
-
-                string assetPath = $"{targetFolder}/{cleanName}SDF.asset";
+                string assetName = $"{Path.GetFileNameWithoutExtension(ttfName)} SDF";
+                string assetPath = $"{targetFolder}/{assetName}.asset";
                 TMP_FontAsset existingAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
                 
                 // Health check: check if the asset is already healthy
@@ -185,7 +187,7 @@ namespace MultiLanguageSupporter.Editor
                             tex.Resize(1024, 1024);
                             tex.Apply(false);
                         }
-                        tex.name = $"{cleanName}Atlas0";
+                        tex.name = $"{assetName} Atlas 0";
                         tex.hideFlags = HideFlags.None;
                     }
                 }
@@ -193,7 +195,7 @@ namespace MultiLanguageSupporter.Editor
                 // Ensure default material is properly formatted
                 if (fontAsset.material != null)
                 {
-                    fontAsset.material.name = $"{cleanName}Material";
+                    fontAsset.material.name = $"{assetName} Material";
                     fontAsset.material.hideFlags = HideFlags.None;
                 }
 

@@ -103,5 +103,23 @@ namespace MultiLanguageSupporter.Tests
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void DetectDominantScript_ShapedTamil_ReturnsTamil()
+        {
+            Assert.AreEqual(ScriptType.Tamil, ScriptDetector.DetectDominantScript("<font=\"Sai-Sai SDF\">tíªfF«</font>"));
+        }
+
+        [Test]
+        public void DetectDominantScript_ShapedHindi_ReturnsHindi()
+        {
+            Assert.AreEqual(ScriptType.Hindi, ScriptDetector.DetectDominantScript("<font=\"Kruti Dev 010 SDF\">ueLrs</font>"));
+        }
+
+        [Test]
+        public void DetectDominantScript_ShapedMixed_ReturnsLatin()
+        {
+            Assert.AreEqual(ScriptType.Latin, ScriptDetector.DetectDominantScript("Hello <font=\"Sai-Sai SDF\">tíªfF«</font>"));
+        }
     }
 }
