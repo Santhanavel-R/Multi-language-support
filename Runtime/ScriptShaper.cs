@@ -37,10 +37,16 @@ namespace MultiLanguageSupporter
                 if (IsFontAssetHealthy(latinFont)) latinFontName = latinFont.name;
             }
 
-            return SegmentAndTagText(input, tamilFontName, hindiFontName, latinFontName);
+            // Determine dominant script of the raw input
+            ScriptType dominant = ScriptDetector.DetectDominantScript(input);
+            string dominantFontName = latinFontName;
+            if (dominant == ScriptType.Tamil) dominantFontName = tamilFontName;
+            else if (dominant == ScriptType.Hindi) dominantFontName = hindiFontName;
+
+            return SegmentAndTagText(input, tamilFontName, hindiFontName, latinFontName, dominantFontName);
         }
 
-        private static string SegmentAndTagText(string input, string tamilFont, string hindiFont, string latinFont)
+        private static string SegmentAndTagText(string input, string tamilFont, string hindiFont, string latinFont, string dominantFontName)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
@@ -50,21 +56,33 @@ namespace MultiLanguageSupporter
 
             ScriptType currentScript = ScriptType.Unknown;
             StringBuilder runBuffer = new StringBuilder();
+            bool insideExistingFontBlock = false;
 
             while (i < len)
             {
-                // Parse TMPro Rich Text tags to avoid processing them
+                // Parse TMPro Rich Text tags
                 if (input[i] == '<')
                 {
                     int closeIdx = input.IndexOf('>', i);
                     if (closeIdx != -1)
                     {
                         // Flush active run before appending tag
-                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
                         currentScript = ScriptType.Unknown;
 
                         string tag = input.Substring(i, closeIdx - i + 1);
                         sb.Append(tag);
+
+                        string lowerTag = tag.ToLowerInvariant();
+                        if (lowerTag.StartsWith("<font"))
+                        {
+                            insideExistingFontBlock = true;
+                        }
+                        else if (lowerTag.StartsWith("</font"))
+                        {
+                            insideExistingFontBlock = false;
+                        }
+
                         i = closeIdx + 1;
                         continue;
                     }
@@ -96,7 +114,7 @@ namespace MultiLanguageSupporter
                     else
                     {
                         // Script switched, flush previous run
-                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
                         currentScript = charScript;
                         runBuffer.Append(character);
                     }
@@ -106,20 +124,21 @@ namespace MultiLanguageSupporter
             }
 
             // Flush remaining run
-            FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+            FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
 
             return sb.ToString();
         }
 
-        private static void FlushRun(StringBuilder sb, StringBuilder runBuffer, ScriptType script, string tamilFont, string hindiFont, string latinFont)
+        private static void FlushRun(StringBuilder sb, StringBuilder runBuffer, ScriptType script, string tamilFont, string hindiFont, string latinFont, string dominantFontName, bool insideExistingFontBlock)
         {
             if (runBuffer.Length == 0) return;
 
             string text = runBuffer.ToString();
             runBuffer.Clear();
 
-            // Do not wrap pure whitespace/punctuation runs
-            if (script == ScriptType.Unknown)
+            // Do not wrap if script is unknown, if we are already inside an existing font block, 
+            // or if the script font matches the dominant base font of the component.
+            if (script == ScriptType.Unknown || insideExistingFontBlock)
             {
                 sb.Append(text);
                 return;
@@ -129,7 +148,14 @@ namespace MultiLanguageSupporter
             if (script == ScriptType.Tamil) fontName = tamilFont;
             else if (script == ScriptType.Hindi) fontName = hindiFont;
 
-            sb.Append("<font=\"").Append(fontName).Append("\">").Append(text).Append("</font>");
+            if (fontName == dominantFontName)
+            {
+                sb.Append(text);
+            }
+            else
+            {
+                sb.Append("<font=\"").Append(fontName).Append("\">").Append(text).Append("</font>");
+            }
         }
 
         private static ScriptType GetCodePointScriptType(int codePoint)
