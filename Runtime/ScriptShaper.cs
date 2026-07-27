@@ -8,19 +8,24 @@ namespace MultiLanguageSupporter
 {
     public static class ScriptShaper
     {
-        // Extensible registry mapping Script to Font Asset Name
-        private static readonly Dictionary<ScriptType, string> ScriptFontMap = new Dictionary<ScriptType, string>
+        public struct Token
         {
-            { ScriptType.Latin, "NotoSansRegularSDF" },
-            { ScriptType.Tamil, "NotoSansTamilRegularSDF" },
-            { ScriptType.Hindi, "NotoSansDevanagariRegularSDF" },
-            { ScriptType.Bengali, "NotoSansBengaliRegularSDF" },
-            { ScriptType.Kannada, "NotoSansKannadaRegularSDF" },
-            { ScriptType.Malayalam, "NotoSansMalayalamRegularSDF" },
-            { ScriptType.Thai, "NotoSansThaiRegularSDF" },
-            { ScriptType.Chinese, "ZCOOLXiaoWeiRegularSDF" },
-            { ScriptType.Korean, "SunflowerMediumSDF" }
-        };
+            public string Content;
+            public bool IsTag;
+            public bool IsFontTag;
+            public bool IsClosingFontTag;
+        }
+
+        public class ScriptRun
+        {
+            public ScriptType Script;
+            public StringBuilder Content = new StringBuilder();
+
+            public ScriptRun(ScriptType script)
+            {
+                Script = script;
+            }
+        }
 
         public static string Shape(string input)
         {
@@ -31,158 +36,240 @@ namespace MultiLanguageSupporter
         {
             if (string.IsNullOrEmpty(input)) return input;
 
+            // Step 1: Unicode Validator (NFC)
+            string normalized = input.Normalize(NormalizationForm.FormC);
+
             if (database == null)
             {
                 database = FontResolver.GetDefaultDatabase();
             }
 
-            // Resolve dynamic names from active database or fall back to defaults
-            string tamilFont = ResolveFontName(database, ScriptType.Tamil);
-            string hindiFont = ResolveFontName(database, ScriptType.Hindi);
-            string latinFont = ResolveFontName(database, ScriptType.Latin);
+            // Resolve font names
+            string tamilFont = ResolveFontName(database, ScriptType.Tamil, "NotoSansTamilRegularSDF");
+            string hindiFont = ResolveFontName(database, ScriptType.Hindi, "NotoSansDevanagariRegularSDF");
+            string latinFont = ResolveFontName(database, ScriptType.Latin, "NotoSansRegularSDF");
+            string bengaliFont = ResolveFontName(database, ScriptType.Bengali, "NotoSansBengaliRegularSDF");
+            string kannadaFont = ResolveFontName(database, ScriptType.Kannada, "NotoSansKannadaRegularSDF");
+            string malayalamFont = ResolveFontName(database, ScriptType.Malayalam, "NotoSansMalayalamRegularSDF");
+            string thaiFont = ResolveFontName(database, ScriptType.Thai, "NotoSansThaiRegularSDF");
+            string chineseFont = ResolveFontName(database, ScriptType.Chinese, "ZCOOLXiaoWeiRegularSDF");
+            string koreanFont = ResolveFontName(database, ScriptType.Korean, "SunflowerMediumSDF");
 
-            // Shape Indic languages first (Unicode Pre-Shaping Stage)
-            string shapedInput = PreShapeComplexScripts(input);
+            // Step 2: Rich Text Tokenizer
+            List<Token> tokens = Tokenize(normalized);
 
-            // Determine dominant script of raw input
-            ScriptType dominant = ScriptDetector.DetectDominantScript(shapedInput);
-            string dominantFontName = latinFont;
-            if (dominant == ScriptType.Tamil) dominantFontName = tamilFont;
-            else if (dominant == ScriptType.Hindi) dominantFontName = hindiFont;
+            // Determine dominant script of raw text parts
+            StringBuilder rawTextBuilder = new StringBuilder();
+            foreach (var token in tokens)
+            {
+                if (!token.IsTag)
+                {
+                    rawTextBuilder.Append(token.Content);
+                }
+            }
+            ScriptType dominant = ScriptDetector.DetectDominantScript(rawTextBuilder.ToString());
+            string dominantFontName = GetFontNameForScript(dominant, latinFont, tamilFont, hindiFont, bengaliFont, kannadaFont, malayalamFont, thaiFont, chineseFont, koreanFont);
 
-            return SegmentAndTagText(shapedInput, tamilFont, hindiFont, latinFont, dominantFontName);
+            // Step 3-8: Process each token, building and generating the output
+            StringBuilder result = new StringBuilder();
+            bool insideExistingFontBlock = false;
+
+            foreach (var token in tokens)
+            {
+                if (token.IsTag)
+                {
+                    if (token.IsFontTag) insideExistingFontBlock = true;
+                    else if (token.IsClosingFontTag) insideExistingFontBlock = false;
+                    result.Append(token.Content);
+                }
+                else
+                {
+                    // Run Grapheme Enumerator, Script Detector, Run Builder, Run Optimizer, Font Resolver & Rich Text Generator
+                    string shapedChunk = ProcessTextChunk(token.Content, tamilFont, hindiFont, latinFont, bengaliFont, kannadaFont, malayalamFont, thaiFont, chineseFont, koreanFont, dominantFontName, insideExistingFontBlock);
+                    result.Append(shapedChunk);
+                }
+            }
+
+            return result.ToString();
         }
 
-        private static string ResolveFontName(FontDatabase database, ScriptType script)
+        private static string ResolveFontName(FontDatabase database, ScriptType script, string defaultName)
         {
             if (database != null)
             {
                 var font = database.GetFontForScript(script);
                 if (IsFontAssetHealthy(font)) return font.name;
             }
-            return ScriptFontMap.ContainsKey(script) ? ScriptFontMap[script] : "NotoSansRegularSDF";
+            return defaultName;
         }
 
-        private static string PreShapeComplexScripts(string input)
+        private static string GetFontNameForScript(ScriptType script, string latin, string tamil, string hindi, string bengali, string kannada, string malayalam, string thai, string chinese, string korean)
         {
-            // By design, this stage accommodates:
-            // 1. Arabic Bidi/RTL context shaping.
-            // 2. Indic glyph substitution & reordering mapped to Private Use Area (PUA) glyphs.
-            // Under normal Unity 2022+ TMPro configurations, using clean Unicode Noto fonts provides native support.
-            return input;
-        }
-
-        private static string SegmentAndTagText(string input, string tamilFont, string hindiFont, string latinFont, string dominantFontName)
-        {
-            StringBuilder sb = new StringBuilder();
-            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(input);
-
-            ScriptType currentScript = ScriptType.Unknown;
-            StringBuilder runBuffer = new StringBuilder();
-            bool insideExistingFontBlock = false;
-
-            while (enumerator.MoveNext())
+            switch (script)
             {
-                string grapheme = enumerator.GetTextElement();
+                case ScriptType.Tamil: return tamil;
+                case ScriptType.Hindi: return hindi;
+                case ScriptType.Bengali: return bengali;
+                case ScriptType.Kannada: return kannada;
+                case ScriptType.Malayalam: return malayalam;
+                case ScriptType.Thai: return thai;
+                case ScriptType.Chinese: return chinese;
+                case ScriptType.Korean: return korean;
+                default: return latin;
+            }
+        }
 
-                // Skip existing rich-text tags
-                if (grapheme.StartsWith("<"))
+        private static List<Token> Tokenize(string text)
+        {
+            List<Token> tokens = new List<Token>();
+            int i = 0;
+            int len = text.Length;
+            StringBuilder currentText = new StringBuilder();
+
+            while (i < len)
+            {
+                if (text[i] == '<')
                 {
-                    int closeIdx = grapheme.IndexOf('>');
+                    int closeIdx = text.IndexOf('>', i);
                     if (closeIdx != -1)
                     {
-                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
-                        currentScript = ScriptType.Unknown;
-                        sb.Append(grapheme);
+                        if (currentText.Length > 0)
+                        {
+                            tokens.Add(new Token { Content = currentText.ToString(), IsTag = false });
+                            currentText.Clear();
+                        }
 
-                        string lowerTag = grapheme.ToLowerInvariant();
-                        if (lowerTag.StartsWith("<font")) insideExistingFontBlock = true;
-                        else if (lowerTag.StartsWith("</font")) insideExistingFontBlock = false;
+                        string tag = text.Substring(i, closeIdx - i + 1);
+                        string lowerTag = tag.ToLowerInvariant();
+                        bool isFont = lowerTag.StartsWith("<font");
+                        bool isClosingFont = lowerTag.StartsWith("</font");
+
+                        tokens.Add(new Token 
+                        { 
+                            Content = tag, 
+                            IsTag = true, 
+                            IsFontTag = isFont, 
+                            IsClosingFontTag = isClosingFont 
+                        });
+                        i = closeIdx + 1;
                         continue;
-                    }
-                }
-
-                int codePoint = char.ConvertToUtf32(grapheme, 0);
-                ScriptType charScript = GetCodePointScriptType(codePoint);
-
-                if (charScript == ScriptType.Unknown)
-                {
-                    runBuffer.Append(grapheme);
-                }
-                else
-                {
-                    if (currentScript == ScriptType.Unknown)
-                    {
-                        currentScript = charScript;
-                        runBuffer.Append(grapheme);
-                    }
-                    else if (charScript == currentScript)
-                    {
-                        runBuffer.Append(grapheme);
                     }
                     else
                     {
-                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
-                        currentScript = charScript;
-                        runBuffer.Append(grapheme);
+                        currentText.Append('<');
+                        i++;
                     }
+                }
+                else
+                {
+                    currentText.Append(text[i]);
+                    i++;
                 }
             }
 
-            FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont, dominantFontName, insideExistingFontBlock);
-            return sb.ToString();
+            if (currentText.Length > 0)
+            {
+                tokens.Add(new Token { Content = currentText.ToString(), IsTag = false });
+            }
+
+            return tokens;
         }
 
-        private static void FlushRun(StringBuilder sb, StringBuilder runBuffer, ScriptType script, string tamilFont, string hindiFont, string latinFont, string dominantFontName, bool insideExistingFontBlock)
+        private static string ProcessTextChunk(
+            string text, 
+            string tamilFont, 
+            string hindiFont, 
+            string latinFont,
+            string bengaliFont,
+            string kannadaFont,
+            string malayalamFont,
+            string thaiFont,
+            string chineseFont,
+            string koreanFont,
+            string dominantFontName, 
+            bool insideExistingFontBlock)
         {
-            if (runBuffer.Length == 0) return;
+            if (string.IsNullOrEmpty(text)) return text;
 
-            string text = runBuffer.ToString();
-            runBuffer.Clear();
-
-            if (script == ScriptType.Unknown || insideExistingFontBlock)
-            {
-                sb.Append(text);
-                return;
-            }
-
-            string fontName = latinFont;
-            if (script == ScriptType.Tamil) fontName = tamilFont;
-            else if (script == ScriptType.Hindi) fontName = hindiFont;
-
-            if (fontName == dominantFontName)
-            {
-                sb.Append(text);
-            }
-            else
-            {
-                sb.Append("<font=\"").Append(fontName).Append("\">").Append(text).Append("</font>");
-            }
-        }
-
-        private static ScriptType GetCodePointScriptType(int codePoint)
-        {
-            if (codePoint >= 0x0B80 && codePoint <= 0x0BFF) return ScriptType.Tamil;
-            if (codePoint >= 0x0900 && codePoint <= 0x097F) return ScriptType.Hindi;
-            if (codePoint >= 0x0980 && codePoint <= 0x09FF) return ScriptType.Bengali;
-            if (codePoint >= 0x0C80 && codePoint <= 0x0CFF) return ScriptType.Kannada;
-            if (codePoint >= 0x0D00 && codePoint <= 0x0D7F) return ScriptType.Malayalam;
-            if (codePoint >= 0x0E00 && codePoint <= 0x0E7F) return ScriptType.Thai;
+            // Step 3-5: Grapheme Enumerator, Script Detector, and Run Builder
+            List<ScriptRun> runs = new List<ScriptRun>();
+            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(text);
             
-            if ((codePoint >= 0xAC00 && codePoint <= 0xD7AF) ||
-                (codePoint >= 0x1100 && codePoint <= 0x11FF) ||
-                (codePoint >= 0x3130 && codePoint <= 0x318F))
-                return ScriptType.Korean;
+            while (enumerator.MoveNext())
+            {
+                string grapheme = enumerator.GetTextElement();
+                int codePoint = char.ConvertToUtf32(grapheme, 0);
+                ScriptType script = ScriptDetector.GetCodePointScriptType(codePoint);
 
-            if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||
-                (codePoint >= 0x3400 && codePoint <= 0x4DBF))
-                return ScriptType.Chinese;
+                if (script == ScriptType.Unknown || ScriptDetector.IsNeutralCodePoint(codePoint))
+                {
+                    if (runs.Count == 0)
+                    {
+                        runs.Add(new ScriptRun(ScriptType.Unknown));
+                    }
+                    runs[runs.Count - 1].Content.Append(grapheme);
+                }
+                else
+                {
+                    if (runs.Count == 0 || runs[runs.Count - 1].Script != script)
+                    {
+                        runs.Add(new ScriptRun(script));
+                    }
+                    runs[runs.Count - 1].Content.Append(grapheme);
+                }
+            }
 
-            if ((codePoint >= 0x0041 && codePoint <= 0x005A) || // A-Z
-                (codePoint >= 0x0061 && codePoint <= 0x007A))   // a-z
-                return ScriptType.Latin;
+            // Step 6: Run Optimizer (Merge neutral/unknown runs)
+            List<ScriptRun> optimizedRuns = new List<ScriptRun>();
+            for (int k = 0; k < runs.Count; k++)
+            {
+                var run = runs[k];
+                if (run.Script == ScriptType.Unknown)
+                {
+                    // Merge into preceding run if possible
+                    if (optimizedRuns.Count > 0)
+                    {
+                        optimizedRuns[optimizedRuns.Count - 1].Content.Append(run.Content.ToString());
+                    }
+                    // Or merge into succeeding run if first run is Unknown
+                    else if (k + 1 < runs.Count)
+                    {
+                        runs[k + 1].Content.Insert(0, run.Content.ToString());
+                    }
+                    else
+                    {
+                        optimizedRuns.Add(run); // Keep as Unknown/Default
+                    }
+                }
+                else
+                {
+                    optimizedRuns.Add(run);
+                }
+            }
 
-            return ScriptType.Unknown;
+            // Step 7-8: Font Resolver and Rich Text Generator
+            StringBuilder sb = new StringBuilder();
+            foreach (var run in optimizedRuns)
+            {
+                string runText = run.Content.ToString();
+                if (insideExistingFontBlock || run.Script == ScriptType.Unknown)
+                {
+                    sb.Append(runText);
+                    continue;
+                }
+
+                string fontName = GetFontNameForScript(run.Script, latinFont, tamilFont, hindiFont, bengaliFont, kannadaFont, malayalamFont, thaiFont, chineseFont, koreanFont);
+                if (fontName == dominantFontName)
+                {
+                    sb.Append(runText);
+                }
+                else
+                {
+                    sb.Append("<font=\"").Append(fontName).Append("\">").Append(runText).Append("</font>");
+                }
+            }
+
+            return sb.ToString();
         }
 
         private static bool IsFontAssetHealthy(TMP_FontAsset font)

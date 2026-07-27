@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -37,120 +38,101 @@ namespace MultiLanguageSupporter
                 database = GetDefaultDatabase();
             }
 
-            if (database == null)
-            {
-                Debug.LogWarning("[SmartFont] No FontDatabase provided and no default database found in Resources.");
-                return;
-            }
-
             string text = !string.IsNullOrEmpty(originalText) ? originalText : textComponent.text;
             if (string.IsNullOrEmpty(text)) return;
 
             ScriptType dominant = ScriptDetector.DetectDominantScript(text);
-            TMP_FontAsset primaryFont = database.GetFontForScript(dominant);
-
-            if (!IsFontAssetHealthy(primaryFont))
+            
+            // Priority 1: Preferred Font (from database)
+            TMP_FontAsset resolvedFont = null;
+            if (database != null)
             {
-                // Fall back to package database
+                resolvedFont = database.GetFontForScript(dominant);
+            }
+
+            // Priority 2: Script Fallback (check preferred font's fallback list)
+            if (resolvedFont != null && !IsFontAssetHealthy(resolvedFont))
+            {
+                resolvedFont = GetHealthyFallback(resolvedFont);
+            }
+
+            // Priority 3: Global Fallback (package database)
+            if (resolvedFont == null || !IsFontAssetHealthy(resolvedFont))
+            {
                 var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
                 if (pkgDb != null)
                 {
-                    var fallbackFont = pkgDb.GetFontForScript(dominant);
-                    if (IsFontAssetHealthy(fallbackFont))
+                    resolvedFont = pkgDb.GetFontForScript(dominant);
+                    if (resolvedFont != null && !IsFontAssetHealthy(resolvedFont))
                     {
-                        primaryFont = fallbackFont;
+                        resolvedFont = GetHealthyFallback(resolvedFont);
                     }
                 }
             }
 
-            if (dominant != ScriptType.Latin && ContainsLatin(text))
+            // Priority 4: TMP Default Font (if healthy)
+            if (resolvedFont == null || !IsFontAssetHealthy(resolvedFont))
             {
-                TMP_FontAsset latinFont = database.GetFontForScript(ScriptType.Latin);
-                if (!IsFontAssetHealthy(latinFont))
-                {
-                    var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
-                    if (pkgDb != null)
-                    {
-                        var fallbackLatin = pkgDb.GetFontForScript(ScriptType.Latin);
-                        if (IsFontAssetHealthy(fallbackLatin))
-                        {
-                            latinFont = fallbackLatin;
-                        }
-                    }
-                }
-                if (IsFontAssetHealthy(latinFont))
-                {
-                    primaryFont = latinFont;
-                }
+                resolvedFont = textComponent.font;
             }
 
-            if (!IsFontAssetHealthy(primaryFont))
+            // Apply font if healthy
+            if (resolvedFont != null && IsFontAssetHealthy(resolvedFont))
             {
-                TMP_FontAsset latinFont = database.GetFontForScript(ScriptType.Latin);
-                if (!IsFontAssetHealthy(latinFont))
-                {
-                    var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
-                    if (pkgDb != null)
-                    {
-                        latinFont = pkgDb.GetFontForScript(ScriptType.Latin);
-                    }
-                }
-                primaryFont = latinFont;
+                textComponent.font = resolvedFont;
             }
-
-            if (primaryFont != null)
+            else
             {
-                textComponent.font = primaryFont;
+                Debug.LogWarning($"[SmartFont] Failed to resolve a healthy font for script {dominant}. Keeping default font.");
             }
         }
 
-        private static bool ContainsLatin(string text)
+        private static TMP_FontAsset GetHealthyFallback(TMP_FontAsset font)
         {
-            if (string.IsNullOrEmpty(text)) return false;
+            if (font == null) return null;
 
-            bool insideFontBlock = false;
-            for (int i = 0; i < text.Length; i++)
+            if (font.fallbackFontAssetTable != null)
             {
-                char c = text[i];
-                if (c == '<' && i < text.Length - 1)
+                foreach (var fallback in font.fallbackFontAssetTable)
                 {
-                    int closeIdx = text.IndexOf('>', i);
-                    if (closeIdx != -1)
+                    if (IsFontAssetHealthy(fallback))
                     {
-                        string tag = text.Substring(i, closeIdx - i + 1).ToLowerInvariant();
-                        if (tag.StartsWith("<font"))
-                        {
-                            insideFontBlock = true;
-                        }
-                        else if (tag.StartsWith("</font"))
-                        {
-                            insideFontBlock = false;
-                        }
-                        i = closeIdx;
-                        continue;
+                        return fallback;
                     }
                 }
-
-                if (insideFontBlock)
-                {
-                    continue;
-                }
-
-                if (ScriptDetector.GetCharScriptType(c) == ScriptType.Latin)
-                {
-                    return true;
-                }
             }
-            return false;
+            return null;
         }
 
-        private static bool IsFontAssetHealthy(TMP_FontAsset font)
+        public static bool IsFontAssetHealthy(TMP_FontAsset font)
         {
-            return font != null && 
-                   font.atlasTextures != null && 
-                   font.atlasTextures.Length > 0 && 
-                   font.atlasTextures[0] != null && 
-                   font.material != null;
+            if (font == null) return false;
+
+            // 1. Source TTF exists (Only required if dynamic)
+            if (font.atlasPopulationMode == AtlasPopulationMode.Dynamic && font.sourceFontFile == null)
+            {
+                return false;
+            }
+
+            // 2. Atlas texture exists
+            if (font.atlasTextures == null || font.atlasTextures.Length == 0 || font.atlasTextures[0] == null)
+            {
+                return false;
+            }
+
+            // 3. Material exists
+            if (font.material == null)
+            {
+                return false;
+            }
+
+            // 4. Character Table & Glyph Table & Lookup Tables
+            if (font.characterTable == null || font.glyphTable == null)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

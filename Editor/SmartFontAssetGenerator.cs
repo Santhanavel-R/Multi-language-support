@@ -415,5 +415,64 @@ namespace MultiLanguageSupporter.Editor
                 Debug.LogWarning($"[SmartFont] ClearFontAssetData failed: {e.Message}");
             }
         }
+
+        [MenuItem("Window/SmartFont/Generate Script Coverage Report")]
+        public static void GenerateCoverageReport()
+        {
+            Debug.Log("[SmartFont] Generating Script Coverage Report...");
+            FontDatabase database = FontResolver.GetDefaultDatabase();
+            if (database == null)
+            {
+                Debug.LogError("[SmartFont] No active FontDatabase found. Cannot generate coverage report.");
+                return;
+            }
+
+            var ranges = new Dictionary<ScriptType, (int start, int end)>
+            {
+                { ScriptType.Latin, (0x0041, 0x007A) },
+                { ScriptType.Tamil, (0x0B80, 0x0BFF) },
+                { ScriptType.Hindi, (0x0900, 0x097F) },
+                { ScriptType.Bengali, (0x0980, 0x09FF) },
+                { ScriptType.Kannada, (0x0C80, 0x0CFF) },
+                { ScriptType.Malayalam, (0x0D00, 0x0D7F) },
+                { ScriptType.Thai, (0x0E00, 0x0E7F) }
+            };
+
+            foreach (var kvp in ranges)
+            {
+                ScriptType script = kvp.Key;
+                var range = kvp.Value;
+                TMP_FontAsset fontAsset = database.GetFontForScript(script);
+
+                if (fontAsset == null || fontAsset.sourceFontFile == null)
+                {
+                    Debug.LogWarning($"[SmartFont] {script}: Font or Source Font File is missing.");
+                    continue;
+                }
+
+                int total = 0;
+                int supported = 0;
+
+                for (int code = range.start; code <= range.end; code++)
+                {
+                    total++;
+                    if (fontAsset.sourceFontFile.HasCharacter((char)code))
+                    {
+                        supported++;
+                    }
+                }
+
+                double pct = (double)supported / total * 100.0;
+                Debug.Log($"[SmartFont] {script} Coverage: {pct:F1}% ({supported}/{total} characters supported by source font '{fontAsset.sourceFontFile.name}')");
+            }
+        }
+
+        [MenuItem("Window/SmartFont/Toggle Verbose Diagnostics")]
+        public static void ToggleVerboseDiagnostics()
+        {
+            bool current = EditorPrefs.GetBool("SmartFont_VerboseDiagnostics", false);
+            EditorPrefs.SetBool("SmartFont_VerboseDiagnostics", !current);
+            Debug.Log($"[SmartFont] Verbose Diagnostics is now {(!current ? "DISABLED" : "ENABLED")}.");
+        }
     }
 }
