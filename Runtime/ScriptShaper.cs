@@ -45,15 +45,15 @@ namespace MultiLanguageSupporter
             }
 
             // Resolve font names
-            string tamilFont = ResolveFontName(database, ScriptType.Tamil, "NotoSansTamilRegularSDF");
-            string hindiFont = ResolveFontName(database, ScriptType.Hindi, "NotoSansDevanagariRegularSDF");
-            string latinFont = ResolveFontName(database, ScriptType.Latin, "NotoSansRegularSDF");
-            string bengaliFont = ResolveFontName(database, ScriptType.Bengali, "NotoSansBengaliRegularSDF");
-            string kannadaFont = ResolveFontName(database, ScriptType.Kannada, "NotoSansKannadaRegularSDF");
-            string malayalamFont = ResolveFontName(database, ScriptType.Malayalam, "NotoSansMalayalamRegularSDF");
-            string thaiFont = ResolveFontName(database, ScriptType.Thai, "NotoSansThaiRegularSDF");
-            string chineseFont = ResolveFontName(database, ScriptType.Chinese, "ZCOOLXiaoWeiRegularSDF");
-            string koreanFont = ResolveFontName(database, ScriptType.Korean, "SunflowerMediumSDF");
+            string tamilFont = ResolveFontName(database, ScriptType.Tamil, "NotoSansTamil-Regular SDF");
+            string hindiFont = ResolveFontName(database, ScriptType.Hindi, "NotoSansDevanagari-Regular SDF");
+            string latinFont = ResolveFontName(database, ScriptType.Latin, "NotoSans-Regular SDF");
+            string bengaliFont = ResolveFontName(database, ScriptType.Bengali, "NotoSansBengali-Regular SDF");
+            string kannadaFont = ResolveFontName(database, ScriptType.Kannada, "NotoSansKannada-Regular SDF");
+            string malayalamFont = ResolveFontName(database, ScriptType.Malayalam, "NotoSansMalayalam-Regular SDF");
+            string thaiFont = ResolveFontName(database, ScriptType.Thai, "NotoSansThai-Regular SDF");
+            string chineseFont = ResolveFontName(database, ScriptType.Chinese, "ZCOOLXiaoWei-Regular SDF");
+            string koreanFont = ResolveFontName(database, ScriptType.Korean, "Sunflower-Medium SDF");
 
             // Step 2: Rich Text Tokenizer
             List<Token> tokens = Tokenize(normalized);

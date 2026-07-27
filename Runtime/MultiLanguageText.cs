@@ -55,9 +55,18 @@ namespace MultiLanguageSupporter
                 textComponent = GetComponent<TMP_Text>();
             }
 
-            if (textComponent != null && textComponent.textPreprocessor != this)
+            if (textComponent != null)
             {
-                textComponent.textPreprocessor = this;
+                if (textComponent.textPreprocessor != null && textComponent.textPreprocessor != this)
+                {
+                    Debug.LogWarning("[MultiLanguageText] Another TMP text preprocessor is already assigned on this GameObject. MultiLanguageText will not override it to avoid double preprocessing.");
+                    return;
+                }
+
+                if (textComponent.textPreprocessor != this)
+                {
+                    textComponent.textPreprocessor = this;
+                }
             }
         }
 
