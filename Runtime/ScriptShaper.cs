@@ -70,6 +70,22 @@ namespace MultiLanguageSupporter
             ScriptType dominant = ScriptDetector.DetectDominantScript(rawTextBuilder.ToString());
             string dominantFontName = GetFontNameForScript(dominant, latinFont, tamilFont, hindiFont, bengaliFont, kannadaFont, malayalamFont, thaiFont, chineseFont, koreanFont);
 
+#if UNITY_EDITOR
+            try
+            {
+                if (UnityEditor.EditorPrefs.GetBool("SmartFont_VerboseDiagnostics", false))
+                {
+                    UnityEngine.Debug.Log($"[ScriptShaper] Dominant script: {dominant}, dominantFontName: {dominantFontName}");
+                    foreach (var t in tokens)
+                    {
+                        if (t.IsTag) UnityEngine.Debug.Log($"[ScriptShaper] Token: TAG -> {t.Content}");
+                        else UnityEngine.Debug.Log($"[ScriptShaper] Token: TEXT -> {t.Content.Substring(0, Math.Min(80, t.Content.Length)).Replace('\n',' ')}");
+                    }
+                }
+            }
+            catch { }
+#endif
+
             // Step 3-8: Process each token, building and generating the output
             StringBuilder result = new StringBuilder();
             bool insideExistingFontBlock = false;
@@ -259,6 +275,16 @@ namespace MultiLanguageSupporter
                 }
 
                 string fontName = GetFontNameForScript(run.Script, latinFont, tamilFont, hindiFont, bengaliFont, kannadaFont, malayalamFont, thaiFont, chineseFont, koreanFont);
+#if UNITY_EDITOR
+                try
+                {
+                    if (UnityEditor.EditorPrefs.GetBool("SmartFont_VerboseDiagnostics", false))
+                    {
+                        UnityEngine.Debug.Log($"[ScriptShaper] Run script: {run.Script}, fontName: {fontName}, dominantFontName: {dominantFontName}, runTextPreview: {runText.Substring(0, Math.Min(40, runText.Length)).Replace('\n',' ')}");
+                    }
+                }
+                catch { }
+#endif
                 if (fontName == dominantFontName)
                 {
                     sb.Append(runText);

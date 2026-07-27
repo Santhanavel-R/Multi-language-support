@@ -283,6 +283,8 @@ namespace MultiLanguageSupporter.Editor
 
                     var renderModeProp = creationSettingsProp.FindPropertyRelative("renderMode");
                     if (renderModeProp != null) renderModeProp.intValue = (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA;
+                    var includeFeaturesProp = creationSettingsProp.FindPropertyRelative("includeFontFeatures");
+                    if (includeFeaturesProp != null) includeFeaturesProp.boolValue = true;
                 }
 
                 // Clear dynamic data on build to keep the build sizes optimized and clean in git
