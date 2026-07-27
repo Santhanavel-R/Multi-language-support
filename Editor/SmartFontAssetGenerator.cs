@@ -228,6 +228,12 @@ namespace MultiLanguageSupporter.Editor
                 // 4. Force Unity's serialization system to register the references on disk using SerializedObject
                 SerializedObject serializedFontAsset = new SerializedObject(fontAsset);
                 
+                SerializedProperty sourceFontFileProp = serializedFontAsset.FindProperty("m_SourceFontFile");
+                if (sourceFontFileProp != null && ttfFont != null)
+                {
+                    sourceFontFileProp.objectReferenceValue = ttfFont;
+                }
+
                 SerializedProperty atlasTexturesProp = serializedFontAsset.FindProperty("m_AtlasTextures");
                 if (atlasTexturesProp != null && tex != null)
                 {
