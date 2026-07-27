@@ -1,4 +1,7 @@
+using System;
 using System.Text;
+using System.Collections.Generic;
+using TMPro;
 
 namespace MultiLanguageSupporter
 {
@@ -34,337 +37,128 @@ namespace MultiLanguageSupporter
                 if (IsFontAssetHealthy(latinFont)) latinFontName = latinFont.name;
             }
 
-            // Shape languages that need left-vowel reordering
-            input = ShapeTamil(input, tamilFontName);
-            input = ShapeDevanagari(input, hindiFontName, latinFontName);
-            input = ShapeBengali(input);
-
-            return input;
+            return SegmentAndTagText(input, tamilFontName, hindiFontName, latinFontName);
         }
 
-        private static string ShapeTamil(string input, string tamilFontName)
+        private static string SegmentAndTagText(string input, string tamilFont, string hindiFont, string latinFont)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
-            bool hasTamil = false;
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-                if (c >= 0x0B80 && c <= 0x0BFF)
-                {
-                    hasTamil = true;
-                    break;
-                }
-            }
-
-            if (!hasTamil)
-            {
-                return input;
-            }
-
             StringBuilder sb = new StringBuilder();
-            StringBuilder tamilGroup = new StringBuilder();
-            bool insideFontBlock = false;
+            int i = 0;
+            int len = input.Length;
 
-            for (int i = 0; i < input.Length; i++)
+            ScriptType currentScript = ScriptType.Unknown;
+            StringBuilder runBuffer = new StringBuilder();
+
+            while (i < len)
             {
-                char c = input[i];
-
-                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
+                // Parse TMPro Rich Text tags to avoid processing them
+                if (input[i] == '<')
                 {
-                    if (tamilGroup.Length > 0)
+                    int closeIdx = input.IndexOf('>', i);
+                    if (closeIdx != -1)
                     {
-                        string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                        sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
-                        tamilGroup.Clear();
+                        // Flush active run before appending tag
+                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+                        currentScript = ScriptType.Unknown;
+
+                        string tag = input.Substring(i, closeIdx - i + 1);
+                        sb.Append(tag);
+                        i = closeIdx + 1;
+                        continue;
                     }
-                    sb.Append(tag);
-                    string lowerTag = tag.ToLowerInvariant();
-                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
-                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
-                    i = tagEndIndex;
-                    continue;
                 }
 
-                if (insideFontBlock)
-                {
-                    sb.Append(c);
-                    continue;
-                }
+                // Retrieve UTF-32 Code Point (resolving surrogate pairs correctly)
+                int codePoint = char.ConvertToUtf32(input, i);
+                int charCount = char.IsSurrogatePair(input, i) ? 2 : 1;
+                string character = input.Substring(i, charCount);
 
-                if (c >= 0x0B80 && c <= 0x0BFF)
+                ScriptType charScript = GetCodePointScriptType(codePoint);
+
+                if (charScript == ScriptType.Unknown)
                 {
-                    tamilGroup.Append(c);
+                    // Neutral characters (spaces, punctuation) inherit current run's script
+                    runBuffer.Append(character);
                 }
                 else
                 {
-                    if (tamilGroup.Length > 0)
+                    if (currentScript == ScriptType.Unknown)
                     {
-                        string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                        sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
-                        tamilGroup.Clear();
+                        currentScript = charScript;
+                        runBuffer.Append(character);
                     }
-                    sb.Append(c);
-                }
-            }
-
-            if (tamilGroup.Length > 0)
-            {
-                string converted = TamilEncoder.TamilEncoding.ConvertFromUnicode(tamilGroup.ToString(), TamilEncoder.TamilFontEncoding.TSCII);
-                sb.Append("<font=\"").Append(tamilFontName).Append("\">").Append(converted).Append("</font>");
-            }
-
-            return sb.ToString();
-        }
-
-        private static string ShapeDevanagari(string input, string hindiFontName, string latinFontName)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-
-            bool hasDevanagari = false;
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-                if (c >= 0x0900 && c <= 0x097F)
-                {
-                    hasDevanagari = true;
-                    break;
-                }
-            }
-
-            if (!hasDevanagari)
-            {
-                return input;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            bool insideFontBlock = false;
-            StringBuilder currentHindi = new StringBuilder();
-            StringBuilder currentLatin = new StringBuilder();
-
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-
-                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
-                {
-                    FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
-                    sb.Append(tag);
-                    string lowerTag = tag.ToLowerInvariant();
-                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
-                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
-                    i = tagEndIndex;
-                    continue;
-                }
-
-                if (insideFontBlock)
-                {
-                    sb.Append(c);
-                    continue;
-                }
-
-                bool isLatinAlphaNum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
-                
-                if (isLatinAlphaNum)
-                {
-                    if (currentHindi.Length > 0)
+                    else if (charScript == currentScript)
                     {
-                        FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
-                    }
-                    currentLatin.Append(c);
-                }
-                else
-                {
-                    if (currentLatin.Length > 0 && (c == ' ' || c == '.' || c == ',' || c == '!' || c == '?' || c == '-' || c == '(' || c == ')' || c == '\'' || c == '"'))
-                    {
-                        currentLatin.Append(c);
+                        runBuffer.Append(character);
                     }
                     else
                     {
-                        if (currentLatin.Length > 0)
-                        {
-                            FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
-                        }
-                        currentHindi.Append(c);
+                        // Script switched, flush previous run
+                        FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+                        currentScript = charScript;
+                        runBuffer.Append(character);
                     }
                 }
+
+                i += charCount;
             }
 
-            FlushDevAndLatin(sb, currentHindi, currentLatin, hindiFontName, latinFontName);
+            // Flush remaining run
+            FlushRun(sb, runBuffer, currentScript, tamilFont, hindiFont, latinFont);
+
             return sb.ToString();
         }
 
-        private static void FlushDevAndLatin(StringBuilder sb, StringBuilder hindi, StringBuilder latin, string hindiFontName, string latinFontName)
+        private static void FlushRun(StringBuilder sb, StringBuilder runBuffer, ScriptType script, string tamilFont, string hindiFont, string latinFont)
         {
-            if (hindi.Length > 0)
-            {
-                string converted = UnicodeToKrutidev.Convert(hindi.ToString());
-                sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(converted).Append("</font>");
-                hindi.Clear();
-            }
-            if (latin.Length > 0)
-            {
-                string latStr = latin.ToString();
-                
-                string trimmed = latStr.TrimEnd(' ', '.', ',', '!', '?', '-', '(', ')', '\'', '"');
-                string trailing = latStr.Substring(trimmed.Length);
-                
-                string cleanLatin = trimmed.TrimStart(' ', '.', ',', '!', '?', '-', '(', ')', '\'', '"');
-                string leading = trimmed.Substring(0, trimmed.Length - cleanLatin.Length);
+            if (runBuffer.Length == 0) return;
 
-                if (cleanLatin.Length > 0)
-                {
-                    if (leading.Length > 0)
-                    {
-                        sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(leading)).Append("</font>");
-                    }
-                    sb.Append("<font=\"").Append(latinFontName).Append("\">").Append(cleanLatin).Append("</font>");
-                    if (trailing.Length > 0)
-                    {
-                        sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(trailing)).Append("</font>");
-                    }
-                }
-                else
-                {
-                    sb.Append("<font=\"").Append(hindiFontName).Append("\">").Append(UnicodeToKrutidev.Convert(latStr)).Append("</font>");
-                }
-                latin.Clear();
+            string text = runBuffer.ToString();
+            runBuffer.Clear();
+
+            // Do not wrap pure whitespace/punctuation runs
+            if (script == ScriptType.Unknown)
+            {
+                sb.Append(text);
+                return;
             }
+
+            string fontName = latinFont;
+            if (script == ScriptType.Tamil) fontName = tamilFont;
+            else if (script == ScriptType.Hindi) fontName = hindiFont;
+
+            sb.Append("<font=\"").Append(fontName).Append("\">").Append(text).Append("</font>");
         }
 
-        private static string ShapeBengali(string input)
+        private static ScriptType GetCodePointScriptType(int codePoint)
         {
-            if (string.IsNullOrEmpty(input)) return input;
+            if (codePoint >= 0x0B80 && codePoint <= 0x0BFF) return ScriptType.Tamil;
+            if (codePoint >= 0x0900 && codePoint <= 0x097F) return ScriptType.Hindi;
+            if (codePoint >= 0x0980 && codePoint <= 0x09FF) return ScriptType.Bengali;
+            if (codePoint >= 0x0C80 && codePoint <= 0x0CFF) return ScriptType.Kannada;
+            if (codePoint >= 0x0D00 && codePoint <= 0x0D7F) return ScriptType.Malayalam;
+            if (codePoint >= 0x0E00 && codePoint <= 0x0E7F) return ScriptType.Thai;
+            
+            if ((codePoint >= 0xAC00 && codePoint <= 0xD7AF) ||
+                (codePoint >= 0x1100 && codePoint <= 0x11FF) ||
+                (codePoint >= 0x3130 && codePoint <= 0x318F))
+                return ScriptType.Korean;
 
-            bool hasBengali = false;
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-                if (c >= 0x0980 && c <= 0x09FF)
-                {
-                    hasBengali = true;
-                    break;
-                }
-            }
+            if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||
+                (codePoint >= 0x3400 && codePoint <= 0x4DBF))
+                return ScriptType.Chinese;
 
-            if (!hasBengali)
-            {
-                return input;
-            }
+            // Basic Latin ranges
+            if ((codePoint >= 0x0041 && codePoint <= 0x005A) || // A-Z
+                (codePoint >= 0x0061 && codePoint <= 0x007A))   // a-z
+                return ScriptType.Latin;
 
-            StringBuilder sb = new StringBuilder();
-            bool insideFontBlock = false;
-
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-
-                if (TryReadTag(input, i, out string tag, out int tagEndIndex))
-                {
-                    sb.Append(tag);
-                    string lowerTag = tag.ToLowerInvariant();
-                    if (lowerTag.StartsWith("<font")) insideFontBlock = true;
-                    else if (lowerTag.StartsWith("</font")) insideFontBlock = false;
-                    i = tagEndIndex;
-                    continue;
-                }
-
-                if (insideFontBlock)
-                {
-                    sb.Append(c);
-                    continue;
-                }
-
-                if (IsBengaliConsonant(c))
-                {
-                    int clusterEnd = i;
-                    while (clusterEnd + 1 < input.Length)
-                    {
-                        if (input[clusterEnd + 1] == '\u09CD')
-                        {
-                            clusterEnd += 1;
-                            if (clusterEnd + 1 < input.Length && IsBengaliConsonant(input[clusterEnd + 1]))
-                            {
-                                clusterEnd += 1;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
-                    if (clusterEnd + 1 < input.Length)
-                    {
-                        char next = input[clusterEnd + 1];
-                        if (next == '\u09BF')
-                        {
-                            sb.Append('\u09BF');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u09C7')
-                        {
-                            sb.Append('\u09C7');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u09C8')
-                        {
-                            sb.Append('\u09C8');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u09CB')
-                        {
-                            sb.Append('\u09C7');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
-                            sb.Append('\u09BE');
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                        if (next == '\u09CC')
-                        {
-                            sb.Append('\u09C7');
-                            sb.Append(input.Substring(i, clusterEnd - i + 1));
-                            sb.Append('\u09D7');
-                            i = clusterEnd + 1;
-                            continue;
-                        }
-                    }
-                }
-                sb.Append(c);
-            }
-            return sb.ToString();
+            return ScriptType.Unknown;
         }
 
-        private static bool IsBengaliConsonant(char c)
-        {
-            return c >= '\u0995' && c <= '\u09B9';
-        }
-
-        private static bool TryReadTag(string input, int index, out string tag, out int tagEndIndex)
-        {
-            tag = null;
-            tagEndIndex = index;
-            if (input[index] != '<') return false;
-
-            int closeIndex = input.IndexOf('>', index);
-            if (closeIndex == -1) return false;
-
-            tag = input.Substring(index, closeIndex - index + 1);
-            tagEndIndex = closeIndex;
-            return true;
-        }
-
-        private static bool IsFontAssetHealthy(TMPro.TMP_FontAsset font)
+        private static bool IsFontAssetHealthy(TMP_FontAsset font)
         {
             return font != null && 
                    font.atlasTextures != null && 
