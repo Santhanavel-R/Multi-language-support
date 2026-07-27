@@ -79,27 +79,23 @@ namespace MultiLanguageSupporter.Editor
 
             if (usePackage)
             {
-                targetFolder = $"{PackagePath}/{RuntimePath}/Resources/Fonts";
+                targetFolder = $"{PackagePath}/{RuntimePath}/Resources";
                 targetDbPath = $"{PackagePath}/{RuntimePath}/Resources/SmartFontDefaultDatabase.asset";
                 
                 if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources"))
                 {
                     AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}", "Resources");
                 }
-                if (!AssetDatabase.IsValidFolder($"{PackagePath}/{RuntimePath}/Resources/Fonts"))
-                {
-                    AssetDatabase.CreateFolder($"{PackagePath}/{RuntimePath}/Resources", "Fonts");
-                }
                 Debug.Log("[SmartFont] Package is mutable. Generating assets directly inside the package folder.");
             }
             else
             {
-                targetFolder = "Assets/SmartFont/Resources/Fonts";
+                targetFolder = "Assets/SmartFont/Resources";
                 targetDbPath = "Assets/SmartFont/Resources/SmartFontDefaultDatabase.asset";
 
-                if (!Directory.Exists(Path.GetFullPath("Assets/SmartFont/Resources/Fonts")))
+                if (!Directory.Exists(Path.GetFullPath("Assets/SmartFont/Resources")))
                 {
-                    Directory.CreateDirectory(Path.GetFullPath("Assets/SmartFont/Resources/Fonts"));
+                    Directory.CreateDirectory(Path.GetFullPath("Assets/SmartFont/Resources"));
                 }
                 Debug.Log("[SmartFont] Package is read-only (immutable). Generating assets inside the project's 'Assets/SmartFont' folder instead.");
             }
