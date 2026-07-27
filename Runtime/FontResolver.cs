@@ -49,18 +49,53 @@ namespace MultiLanguageSupporter
             ScriptType dominant = ScriptDetector.DetectDominantScript(text);
             TMP_FontAsset primaryFont = database.GetFontForScript(dominant);
 
+            if (!IsFontAssetHealthy(primaryFont))
+            {
+                // Fall back to package database
+                var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
+                if (pkgDb != null)
+                {
+                    var fallbackFont = pkgDb.GetFontForScript(dominant);
+                    if (IsFontAssetHealthy(fallbackFont))
+                    {
+                        primaryFont = fallbackFont;
+                    }
+                }
+            }
+
             if (dominant != ScriptType.Latin && ContainsLatin(text))
             {
                 TMP_FontAsset latinFont = database.GetFontForScript(ScriptType.Latin);
-                if (latinFont != null)
+                if (!IsFontAssetHealthy(latinFont))
+                {
+                    var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
+                    if (pkgDb != null)
+                    {
+                        var fallbackLatin = pkgDb.GetFontForScript(ScriptType.Latin);
+                        if (IsFontAssetHealthy(fallbackLatin))
+                        {
+                            latinFont = fallbackLatin;
+                        }
+                    }
+                }
+                if (IsFontAssetHealthy(latinFont))
                 {
                     primaryFont = latinFont;
                 }
             }
 
-            if (primaryFont == null)
+            if (!IsFontAssetHealthy(primaryFont))
             {
-                primaryFont = database.GetFontForScript(ScriptType.Latin);
+                TMP_FontAsset latinFont = database.GetFontForScript(ScriptType.Latin);
+                if (!IsFontAssetHealthy(latinFont))
+                {
+                    var pkgDb = Resources.Load<FontDatabase>("SmartFontPackageDatabase");
+                    if (pkgDb != null)
+                    {
+                        latinFont = pkgDb.GetFontForScript(ScriptType.Latin);
+                    }
+                }
+                primaryFont = latinFont;
             }
 
             if (primaryFont != null)
@@ -107,6 +142,15 @@ namespace MultiLanguageSupporter
                 }
             }
             return false;
+        }
+
+        private static bool IsFontAssetHealthy(TMP_FontAsset font)
+        {
+            return font != null && 
+                   font.atlasTextures != null && 
+                   font.atlasTextures.Length > 0 && 
+                   font.atlasTextures[0] != null && 
+                   font.material != null;
         }
     }
 }

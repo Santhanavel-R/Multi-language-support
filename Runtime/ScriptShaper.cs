@@ -25,13 +25,13 @@ namespace MultiLanguageSupporter
             if (database != null)
             {
                 var tamilFont = database.GetFontForScript(ScriptType.Tamil);
-                if (tamilFont != null) tamilFontName = tamilFont.name;
+                if (IsFontAssetHealthy(tamilFont)) tamilFontName = tamilFont.name;
 
                 var hindiFont = database.GetFontForScript(ScriptType.Hindi);
-                if (hindiFont != null) hindiFontName = hindiFont.name;
+                if (IsFontAssetHealthy(hindiFont)) hindiFontName = hindiFont.name;
 
                 var latinFont = database.GetFontForScript(ScriptType.Latin);
-                if (latinFont != null) latinFontName = latinFont.name;
+                if (IsFontAssetHealthy(latinFont)) latinFontName = latinFont.name;
             }
 
             // Shape languages that need left-vowel reordering
@@ -362,6 +362,15 @@ namespace MultiLanguageSupporter
             tag = input.Substring(index, closeIndex - index + 1);
             tagEndIndex = closeIndex;
             return true;
+        }
+
+        private static bool IsFontAssetHealthy(TMPro.TMP_FontAsset font)
+        {
+            return font != null && 
+                   font.atlasTextures != null && 
+                   font.atlasTextures.Length > 0 && 
+                   font.atlasTextures[0] != null && 
+                   font.material != null;
         }
     }
 }
